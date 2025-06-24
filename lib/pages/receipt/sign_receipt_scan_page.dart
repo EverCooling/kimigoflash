@@ -1,0 +1,214 @@
+import 'dart:io';
+import 'dart:typed_data';
+import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_form_builder/flutter_form_builder.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:get/get.dart';
+import 'package:get/get_core/src/get_main.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:kimiflash/pages/widgets/multi_album_picker_field.dart';
+import 'package:kimiflash/pages/widgets/signature_preview.dart';
+import 'package:riverpod/src/framework.dart';
+import '../../http/api/auth_api.dart';
+import '../widgets/custom_dropdown_field.dart';
+import '../widgets/custom_text_field.dart';
+import '../widgets/multi_image_picker_field.dart';
+import '../widgets/sign_method_bottom_sheet.dart';
+import '../widgets/signature_pad.dart';
+import '../widgets/signature_preview.dart';
+import 'package:loading_overlay/loading_overlay.dart';
+
+
+class SignReceiptScanPage extends StatefulWidget {
+  const SignReceiptScanPage({Key? key}) : super(key: key);
+
+  @override
+  State<SignReceiptScanPage> createState() => _SignReceiptScanPageState();
+}
+
+
+class _SignReceiptScanPageState extends State<SignReceiptScanPage> {
+  final _formKey = GlobalKey<FormBuilderState>();
+  bool _isLoading = false;
+  String? _uploadedImage;
+  final ImagePicker _picker = ImagePicker();
+  Uint8List? _signatureData;
+  String _statusMessage = '请在下方签名';
+  String _kyInStorageNumber = '';
+  List<File>? _receiptImages;
+
+  final AuthApi _authApi = AuthApi();
+
+  Future<void> _verifyOrder(String orderNumber) async {
+    setState(() => _isLoading = true);
+    try {
+      final response = await _authApi.CheckOrderIsDeliver(orderNumber);
+      setState(() {
+        _isLoading = false;
+      });
+
+      if (response.code == 200) {
+        Get.snackbar('成功', '单号验证成功');
+      } else {
+        Get.snackbar('失败', response.message ?? '验证失败');
+      }
+    } catch (e) {
+      setState(() => _isLoading = false);
+      Get.snackbar('错误', e.toString());
+    }
+  }
+
+  final List<String> _methods = [
+    '本人签收',
+    '自提签收',
+    '其他签收',
+  ];
+
+  Future<void>  _submit() async{
+    setState(() => _isLoading = true);
+
+    final form = _formKey.currentState;
+    if (form?.saveAndValidate() ?? false) {
+      try {
+        final response = await _authApi.DeliverSignFor({
+          'kyInStorageNumber': 'ureutreu',
+          'signForType': '1',
+          'signForImg': 'http://www.baidu.com',
+          'signature':''
+        });
+        setState(() {
+          _isLoading = false;
+        });
+
+        if (response.code == 200) {
+          Get.snackbar('成功', '成功');
+        } else {
+          Get.snackbar('失败', response.message ?? '验证失败');
+        }
+      } catch (e) {
+        setState(() => _isLoading = false);
+        Get.snackbar('错误', e.toString());
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return LoadingOverlay(
+        isLoading: _isLoading,
+        progressIndicator: CircularProgressIndicator(),
+        child: Scaffold(
+          appBar: AppBar(title: Text('签收扫描')),
+          body: Column(
+            children: [
+              // 可滚动的内容区域
+              Expanded(
+                child: SingleChildScrollView(
+                  padding: EdgeInsets.all(16.0),
+                  physics: AlwaysScrollableScrollPhysics(),
+                  child: FormBuilder(
+                    key: _formKey,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        SizedBox(height: 20),
+                        CustomTextField(
+                          name: 'trackingNumber',
+                          labelText: '扫描单号',
+                          hintText: '请输入运单号',
+                          prefixIcon: Icons.vertical_distribute,
+                          isLoading: _isLoading,
+                          onSuffixPressed: () async {
+                            if (_isLoading) return;
+                            final barcodeResult = await Get.toNamed('/scanner');
+                            if (barcodeResult != null) {
+                              _formKey.currentState?.fields['trackingNumber']?.didChange(barcodeResult);
+                              await _verifyOrder(barcodeResult);
+                            }
+                          },
+                          onSubmitted: (value) async {
+                            if (value != null) await _verifyOrder(value);
+                          },
+                        ),
+                        SizedBox(height: 20),
+
+                        // 签收方式
+                        CustomDropdownField(
+                          name: 'signMethod',
+                          labelText: '签收方式',
+                          items: _methods,
+                          initialValue: null,
+                          onTap: (context) async {
+                            return await
+                            // 高级使用方式（自定义样式）
+                            SignMethodBottomSheet.show(
+                              context,
+                              methods: _methods,
+                              initialValue: null,
+                              title: '选择派件方式',
+                              titleStyle: TextStyle(fontSize: 20, color: Colors.blue),
+                              selectedColor: Colors.blue,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+                              ),
+                              additionalActions: [
+                                Divider(),
+                                ListTile(
+                                  title: Text('取消', style: TextStyle(color: Colors.grey)),
+                                  onTap: () => Navigator.pop(context),
+                                ),
+                              ],
+                            );
+                          },
+                        ),
+                        SizedBox(height: 20),
+
+                        // 图片上传区域
+                        SizedBox(height: 8),
+                        // 在页面中使用 MultiAlbumPickerField
+                        MultiAlbumPickerField(
+                          label: '上传签收图片',
+                          maxSelection: 5,
+                          onImageUploaded: (imagePaths) {
+                            // 处理上传后的图片路径列表
+                            print('上传成功：$imagePaths');
+                          },
+                        ),
+                        SizedBox(height: 20),
+
+                        // 客户签字板
+                        SignaturePreview(
+                          onSignatureChanged: (signatureBytes) {
+                            setState(() {
+                              _signatureData = signatureBytes;
+                              _statusMessage = signatureBytes == null
+                                  ? '签名已清除，请重新签名'
+                                  : '签名已完成';
+                            });
+                          },
+                        ),
+                        SizedBox(height: 32),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+
+              // 底部固定提交按钮
+              Padding(
+                padding: EdgeInsets.all(16.0),
+                child: ElevatedButton(
+                  onPressed: _submit,
+                  style: ElevatedButton.styleFrom(
+                    minimumSize: Size(double.infinity, 50),
+                  ),
+                  child: Text('提交'),
+                ),
+              ),
+            ],
+          ),
+        ),
+    );
+  }
+}
