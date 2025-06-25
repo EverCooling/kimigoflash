@@ -51,7 +51,7 @@ class _SignReceiptScanPageState extends State<SignReceiptScanPage> {
       if (response.code == 200) {
         Get.snackbar('成功', '单号验证成功');
       } else {
-        Get.snackbar('失败', response.message ?? '验证失败');
+        Get.snackbar('失败', response.msg ?? '验证失败');
       }
     } catch (e) {
       setState(() => _isLoading = false);
@@ -84,7 +84,7 @@ class _SignReceiptScanPageState extends State<SignReceiptScanPage> {
         if (response.code == 200) {
           Get.snackbar('成功', '成功');
         } else {
-          Get.snackbar('失败', response.message ?? '验证失败');
+          Get.snackbar('失败', response.msg ?? '验证失败');
         }
       } catch (e) {
         setState(() => _isLoading = false);

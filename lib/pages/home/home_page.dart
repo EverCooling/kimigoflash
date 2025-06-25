@@ -1,6 +1,7 @@
 // lib/pages/home/home_page.dart
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:kimiflash/http/api/token_manager.dart';
 import 'home_controller.dart';
 
 class HomePage extends StatelessWidget {
@@ -11,7 +12,22 @@ class HomePage extends StatelessWidget {
     final HomeController controller = Get.find();
 
     return Scaffold(
-      appBar: AppBar(title: Text("首页")),
+      appBar: AppBar(
+        title: Text("首页"),
+        actions: [
+        IconButton(
+          icon: Icon(Icons.logout),
+          onPressed: () {
+            // 清除 GetX 控制器（可选）
+            Get.delete<HomeController>();
+
+            // 跳转到登录页
+            Get.offAllNamed('/login');
+            TokenManager.clearToken();
+            TokenManager.clearUsername();
+          },
+        ),
+      ],),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: GridView.count(

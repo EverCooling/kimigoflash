@@ -10,23 +10,34 @@ class CustomTextField extends StatelessWidget {
   final VoidCallback? onSuffixPressed;
   final ValueChanged<String?>? onSubmitted;  // 修改类型
   final String? initialValue;
+  final bool enabled;
+  final TextEditingController? controller;
+  final IconData? suffixIcon;// 可选 controller
+  final FormFieldValidator<String>? validator; // 添加 validator 支持
 
   const CustomTextField({
     Key? key,
     required this.name,
     required this.labelText,
+    this.controller,
     required this.hintText,
     this.prefixIcon,
     this.isLoading = false,
     this.onSuffixPressed,
     this.onSubmitted,
     this.initialValue,
+    this.enabled = true,
+    this.suffixIcon,
+    this.validator,
   }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     return FormBuilderTextField(
+      controller: controller, // ✅ 使用传入的 controller
       name: name,
+      validator: validator,
+      enabled: enabled,
       initialValue: initialValue,
       decoration: InputDecoration(
         labelText: labelText,
@@ -48,16 +59,19 @@ class CustomTextField extends StatelessWidget {
         prefixIcon: prefixIcon != null
             ? Icon(prefixIcon, color: Colors.red)
             : null,
-        suffixIcon: isLoading
-            ? SizedBox(
-          width: 20,
-          height: 20,
-          child: CircularProgressIndicator(strokeWidth: 2),
-        )
-            : IconButton(
-          icon: Icon(Icons.barcode_reader),
-          onPressed: onSuffixPressed,
-        ),
+        suffixIcon: suffixIcon != null
+            ? IconButton(icon: Icon(suffixIcon), onPressed: onSuffixPressed)
+            : null,
+        // suffixIcon: isLoading
+        //     ? SizedBox(
+        //   width: 20,
+        //   height: 20,
+        //   child: CircularProgressIndicator(strokeWidth: 2),
+        // )
+        //     : IconButton(
+        //   icon: Icon(Icons.barcode_reader),
+        //   onPressed: onSuffixPressed,
+        // ),
       ),
       onSubmitted: onSubmitted,
     );

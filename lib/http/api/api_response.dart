@@ -1,29 +1,33 @@
 class ApiResponse<T> {
   final T? data;
   final bool success;
-  final String message;
+  final String msg;
   final int? code;
+  final String? token;
 
   ApiResponse({
     this.data,
     required this.success,
-    required this.message,
+    required this.msg,
     this.code,
+    this.token
   });
 
   // 新增的通用解析方法
   static ApiResponse<dynamic> parse(Map<String, dynamic> response) {
     final code = response['code'] as int? ?? 400;
     final success = response['success'] as bool? ?? false;
-    final message = response['message'] as String? ?? 'Request failed';
+    final msg = response['msg'] as String? ?? 'Request failed';
+    final token = response['token'] as String?;
 
     final data = _parseDataField(response['data']);
 
     return ApiResponse<dynamic>(
       code: code,
-      message: message,
+      msg: msg,
       data: data,
       success: success,
+      token: token
     );
   }
 
@@ -47,21 +51,21 @@ class ApiResponse<T> {
   }
 
   // 成功响应
-  factory ApiResponse.success({T? data, String message = "请求成功"}) {
+  factory ApiResponse.success({T? data, String msg = "请求成功"}) {
     return ApiResponse<T>(
       code: 200,
       data: data,
       success: true,
-      message: message,
+      msg: msg,
     );
   }
 
   // 失败响应
-  factory ApiResponse.failure({String message = "请求失败", int? code}) {
+  factory ApiResponse.failure({String msg = "请求失败", int? code}) {
     return ApiResponse<T>(
       data: null,
       success: false,
-      message: message,
+      msg: msg,
       code: code,
     );
   }
@@ -74,11 +78,11 @@ class ApiResponse<T> {
       return ApiResponse<T>(
         data: data,
         success: json['success'] ?? false,
-        message: json['message'] ?? '未知错误',
+        msg: json['msg'] ?? '未知错误',
         code: json['code'],
       );
     } catch (e) {
-      return ApiResponse.failure(message: '解析响应失败: $e');
+      return ApiResponse.failure(msg: '解析响应失败: $e');
     }
   }
 
@@ -87,7 +91,7 @@ class ApiResponse<T> {
     return {
       'data': data,
       'success': success,
-      'message': message,
+      'msg': msg,
       'code': code,
     };
   }

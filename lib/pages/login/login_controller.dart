@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:get/get.dart';
 import 'package:kimiflash/http/api/api_response.dart';
 import 'package:kimiflash/http/api/auth_api.dart';
+import 'package:kimiflash/http/http_client.dart';
 import '../../http/http_response_provider.dart';
 import '../../http/api/token_manager.dart';
 
@@ -17,20 +18,19 @@ class LoginController extends GetxController {
 
     try {
       // 直接调用auth_api登录接口
-      final authApi = AuthApi(container);
+      final authApi = AuthApi();
       final result = await authApi.login(username.value, password.value);
 
       if (result.code == 200) {
+        print(result.msg);
         // 保存token
-        if (result.data != null) {
-          await TokenManager.saveToken(result.data?['value'] as String);
-        }
-        
+        await ApiService().saveToken(result.msg);
+        await ApiService().saveUsername(username.value); // 新增：保存用户名
         isLoading.value = false;
         Get.offAllNamed('/home');
       } else {
         isLoading.value = false;
-        Get.snackbar('登录失败', result.message ?? '未知错误');
+        Get.snackbar('登录失败', result.msg ?? '未知错误');
       }
     } catch (e) {
       isLoading.value = false;

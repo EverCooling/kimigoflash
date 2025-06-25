@@ -1,3 +1,8 @@
+import 'package:kimiflash/http/api/api_response.dart';
+import 'package:kimiflash/http/http_client.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:kimiflash/http/api/token_manager.dart';
+import 'package:dio/dio.dart'; // 添加Dio导入
 import 'dart:convert';
 import 'package:http/http.dart' as http; // 用于MultipartRequest
 import 'package:kimiflash/http/api/api_response.dart';
@@ -6,24 +11,21 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:kimiflash/http/api/token_manager.dart';
 
 class AuthApi {
-  final HttpClient _client;
-  final ProviderContainer? container; // 添加container属性
-  
-  AuthApi([ProviderContainer? container])
-      : container = container,
-        _client = HttpClient(null, container);
-
+  final ApiService _client = ApiService();
 
 // 修改后的接口调用示例
   Future<ApiResponse> login(String username, String password) async {
     try {
-      final response = await _client.post('/api/DeliveryMan/Login', {
-        'username': username,
-        'password': password,
-      });
-      return ApiResponse.parse(response);
+      final response = await _client.post(
+        '/delivery-man/login', 
+        data: {
+          'username': username,
+          'password': password,
+        }
+      );
+      return ApiResponse.parse(response.data);
     } catch (e) {
-      return ApiResponse.failure(message: e.toString());
+      return ApiResponse.failure(msg: e.toString());
     }
   }
 
@@ -33,14 +35,16 @@ class AuthApi {
     try {
       final response = await _client.get(
         '/api/DeliveryMan/CheckOrderIsDeliver',
-        queryParameters: {'kyInStorageNumber': orderNumber},
+        queryParameters: {
+          'kyInStorageNumber': orderNumber,
+        }
       );
 
       // 使用ApiResponse.parse方法解析响应
-      return ApiResponse.parse(response);
+      return ApiResponse.parse(response.data);
     } catch (e) {
       return ApiResponse.failure(
-        message: '验证出错: ${e.toString()}',
+        msg: '验证出错: ${e.toString()}',
         code: 500,
       );
     }
@@ -51,14 +55,32 @@ class AuthApi {
     try {
       final response = await _client.post(
         '/api/DeliveryMan/DeliverSignFor',
-        queryParameters,
+        data: queryParameters,
       );
 
       // 使用ApiResponse.parse方法解析响应
-      return ApiResponse.parse(response);
+      return ApiResponse.parse(response.data);
     } catch (e) {
       return ApiResponse.failure(
-        message: '验证出错: ${e.toString()}',
+        msg: '验证出错: ${e.toString()}',
+        code: 500,
+      );
+    }
+  }
+
+  //签收提交接口
+  Future<ApiResponse> DeliverManScanOutWarehouse(Map<String,dynamic> queryParameters) async{
+    try {
+      final response = await _client.post(
+        '/delivery-man/delivery-man-scan-out-warehouse',
+        data: queryParameters
+      );
+
+      // 使用ApiResponse.parse方法解析响应
+      return ApiResponse.parse(response.data);
+    } catch (e) {
+      return ApiResponse.failure(
+        msg: '验证出错: ${e.toString()}',
         code: 500,
       );
     }
@@ -83,7 +105,7 @@ class AuthApi {
       return ApiResponse.parse(parsedResponse);
     } catch (e) {
       return ApiResponse.failure(
-        message: 'HTTP上传出错: ${e.toString()}',
+        msg: 'HTTP上传出错: ${e.toString()}',
         code: 500,
       );
     }
