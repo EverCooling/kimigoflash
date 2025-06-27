@@ -110,10 +110,18 @@ class _MultiAlbumPickerFieldState extends State<MultiAlbumPickerField> {
               return Stack(
                 alignment: Alignment.topRight,
                 children: [
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(8),
-                    child: Image.network(file, fit: BoxFit.cover),
-                  ),
+                 Container(
+                   width: 80,
+                   height: 80,
+                   decoration: BoxDecoration(
+                     borderRadius: BorderRadius.circular(8),
+                     border: Border.all(color: Colors.grey, width: 1.0),
+                   ),
+                   child:  ClipRRect(
+                     borderRadius: BorderRadius.circular(8),
+                     child: Image.network(file, fit: BoxFit.cover),
+                   ),
+                 ),
                   Positioned(
                     top: -8,
                     right: -8,
@@ -122,7 +130,6 @@ class _MultiAlbumPickerFieldState extends State<MultiAlbumPickerField> {
                         setState(() {
                           _uploadedPaths.removeAt(index);
                         })
-
                       },
                       icon: Icon(Icons.cancel, color: Colors.red),
                       padding: EdgeInsets.zero,
@@ -140,8 +147,8 @@ class _MultiAlbumPickerFieldState extends State<MultiAlbumPickerField> {
                 _pickAndUploadImages()
                 },
                 child: Container(
-                  width: 100,
-                  height: 100,
+                  width: 80,
+                  height: 80,
                   decoration: BoxDecoration(
                     border: Border.all(color: Colors.red,width: 1.0),
                     borderRadius: BorderRadius.circular(8),
