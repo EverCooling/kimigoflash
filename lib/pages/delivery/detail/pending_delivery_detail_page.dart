@@ -5,16 +5,71 @@ import 'package:get/get.dart';
 import 'package:get/get_core/src/get_main.dart';
 import 'package:kimiflash/pages/delivery/detail/pending_delivery_detail_controller.dart';
 
+import '../../../http/api/auth_api.dart';
 import '../../widgets/custom_dropdown_field.dart';
-import '../../widgets/multi_image_picker_field.dart';
+import '../../widgets/multi_album_picker_field.dart';
 import '../../widgets/sign_method_bottom_sheet.dart';
 import '../../widgets/signature_preview.dart';
 
-class PendingDeliveryDetailPage extends StatelessWidget {
+class PendingDeliveryDetail extends StatefulWidget {
   final Map<String, dynamic> deliveryItem;
 
-  const PendingDeliveryDetailPage({Key? key, required this.deliveryItem})
-      : super(key: key);
+  const PendingDeliveryDetail({
+    Key? key,
+    required this.deliveryItem
+  }) : super(key: key);
+
+  @override
+  State<PendingDeliveryDetail> createState() => _PendingDeliveryDetailPageState();
+}
+
+class _PendingDeliveryDetailPageState extends State<PendingDeliveryDetail> {
+  final AuthApi _authApi = AuthApi();
+  final controller = Get.put(PendingDeliveryDetailController());
+  late Map<String, dynamic> deliveryDetails; // 用于存储请求返回的数据
+
+  @override
+  void initState() {
+    super.initState();
+    deliveryDetails = {}; // 初始化为空对象
+    // 默认加载第一个 tab 的数据
+    _fetchOrders(widget.deliveryItem['id']);
+  }
+
+  String getSignForTypeName(int signForType) {
+    switch (signForType) {
+      case 1:
+        return '本人签收';
+      case 2:
+        return '自提签收';
+      case 3:
+        return '其他签收';
+      default:
+        return '未知签收类型';
+    }
+  }
+
+  Future<void> _fetchOrders(int orderId) async {
+    try {
+      final response = await _authApi.DeliverManDeliveryDetail({
+        "orderId": orderId,
+        "customerCode": "10010"
+      });
+
+      if (response.code == 200) {
+        setState(() {
+          deliveryDetails = response.data; // 假设Response类有一个data字段包含详细数据
+        });
+      } else {
+        Get.snackbar('加载失败', response.msg ?? '未知错误', snackPosition: SnackPosition.BOTTOM); // 指定snackbar的位置
+      }
+    } catch (e) {
+      Get.snackbar('网络错误', e.toString(), snackPosition: SnackPosition.BOTTOM); // 指定snackbar的位置
+    } finally {
+    }
+  }
+
+
 
   @override
   Widget build(BuildContext context) {
@@ -37,7 +92,7 @@ class PendingDeliveryDetailPage extends StatelessWidget {
                     // 1. 单号展示(独占一栏)
                     _buildInfoCard(
                       title: '运单号',
-                      content: deliveryItem['trackingNumber'] ?? '',
+                      content: deliveryDetails['kySmallShipment'] ?? '',
                       icon: Icons.confirmation_number,
                     ),
                     const SizedBox(height: 16),
@@ -47,13 +102,13 @@ class PendingDeliveryDetailPage extends StatelessWidget {
                       title: '收件人信息',
                       children: [
                         _buildInfoRow(
-                            '姓名', deliveryItem['receiverName'] ?? '',
+                            '姓名', deliveryDetails['recipientName'] ?? '',
                             Icons.person),
                         _buildInfoRow(
-                            '电话', deliveryItem['receiverPhone'] ?? '',
+                            '电话', deliveryDetails['recipietnMobile'] ?? '',
                             Icons.phone),
                         _buildInfoRow(
-                            '地址', deliveryItem['receiverAddress'] ?? '',
+                            '地址', deliveryDetails['recipetenAddressFirst'] ?? '',
                             Icons.location_on),
                       ],
                     ),
@@ -62,20 +117,20 @@ class PendingDeliveryDetailPage extends StatelessWidget {
                     // 3. 总件数
                     _buildInfoCard(
                       title: '总件数',
-                      content: '${deliveryItem['totalQuantity'] ?? '0'}件',
+                      content: '${deliveryDetails['pcsCount'] ?? '0'}件',
                       icon: Icons.format_list_numbered,
                     ),
                     const SizedBox(height: 16),
 
-                    // 4. 所属品类1
-                    _buildCategorySection(
-                        '所属品类1', deliveryItem['category1Items'] ?? []),
-                    const SizedBox(height: 16),
-
-                    // 5. 所属品类2
-                    _buildCategorySection(
-                        '所属品类2', deliveryItem['category2Items'] ?? []),
-                    const SizedBox(height: 16),
+                    // // 4. 所属品类1
+                    // _buildCategorySection(
+                    //     '所属品类1', deliveryDetails['category1Items'] ?? []),
+                    // const SizedBox(height: 16),
+                    //
+                    // // 5. 所属品类2
+                    // _buildCategorySection(
+                    //     '所属品类2', deliveryDetails['category2Items'] ?? []),
+                    // const SizedBox(height: 16),
 
                     // 6. 签收方式
                     CustomDropdownField(
@@ -93,17 +148,18 @@ class PendingDeliveryDetailPage extends StatelessWidget {
                     const SizedBox(height: 16),
 
                     // 7. 签收图片
-                    Text('签收图片', style: TextStyle(
-                        fontSize: 16, fontWeight: FontWeight.bold)),
-                    const SizedBox(height: 8),
-                    MultiImagePickerField(
-                      label: '',
-                      maxImages: 5,
-                      onImagesSelected: (images) {
-                        // controller.setImages(images);
+                    // 图片上传区域
+                    SizedBox(height: 8),
+                    // 在页面中使用 MultiAlbumPickerField
+                    MultiAlbumPickerField(
+                      label: '上传签收图片',
+                      maxSelection: 5,
+                      onImageUploaded: (imagePaths) {
+                        // 处理上传后的图片路径列表
+                        print('上传成功：$imagePaths');
                       },
                     ),
-                    const SizedBox(height: 16),
+                    SizedBox(height: 20),
 
                     // 8. 客户签字板
                     SignaturePreview(
@@ -212,35 +268,35 @@ class PendingDeliveryDetailPage extends StatelessWidget {
   }
 
 // 构建品类区域
-  Widget _buildCategorySection(String title, List<dynamic> items) {
-    return _buildInfoCard(
-      title: title,
-      children: [
-        const SizedBox(height: 8),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: items
-                .map((item) => _buildCategoryItem(item.toString()))
-                .toList(),
-          ),
-        ),
-      ],
-    );
-  }
+//   Widget _buildCategorySection(String title, List<dynamic> items) {
+//     return _buildInfoCard(
+//       title: title,
+//       children: [
+//         const SizedBox(height: 8),
+//         Padding(
+//           padding: const EdgeInsets.symmetric(horizontal: 16.0),
+//           child: Column(
+//             crossAxisAlignment: CrossAxisAlignment.start,
+//             children: items
+//                 .map((item) => _buildCategoryItem(item.toString()))
+//                 .toList(),
+//           ),
+//         ),
+//       ],
+//     );
+//   }
 
 // 构建单个品类项
-  Widget _buildCategoryItem(String itemName) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4.0),
-      child: Row(
-        children: [
-          Icon(Icons.circle, size: 8, color: Colors.grey),
-          const SizedBox(width: 8),
-          Text(itemName),
-        ],
-      ),
-    );
-  }
+//   Widget _buildCategoryItem(String itemName) {
+//     return Padding(
+//       padding: const EdgeInsets.symmetric(vertical: 4.0),
+//       child: Row(
+//         children: [
+//           Icon(Icons.circle, size: 8, color: Colors.grey),
+//           const SizedBox(width: 8),
+//           Text(itemName),
+//         ],
+//       ),
+//     );
+//   }
 }

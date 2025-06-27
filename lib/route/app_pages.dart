@@ -32,7 +32,7 @@ class AppPages {
     ),
     GetPage(
       name: '/delivery-list',
-      page: () => const DeliveryListPage(),
+      page: () => DeliveryListPage(),
       binding: DeliveryListBinding(),
     ),
     GetPage(
@@ -42,17 +42,17 @@ class AppPages {
     ),
     GetPage(
       name: '/exception-report',
-      page: () => ExceptionReportPage(),
+      page: () => ExceptionReportPage(deliveryItem: {},),
       binding: ExceptionReportBinding(),
     ),
     GetPage(
       name: '/complete-delivery-detail',
-      page: () => CompleteDeliveryDetailPage(deliveryItem: {},), // 页面组件
+      page: () => CompleteDeliveryDetailPage(deliveryItem: Get.arguments,), // 页面组件
       binding: CompleteDeliveryDetailBinding(), // 对应 Binding
     ),
     GetPage(
       name: '/pending-delivery-detail',
-      page: () => PendingDeliveryDetailPage(deliveryItem: Get.arguments as Map<String, dynamic>),
+      page: () => PendingDeliveryDetail(deliveryItem: Get.arguments),
       binding: PendingDeliveryDetailBinding(),
     ),
     GetPage(

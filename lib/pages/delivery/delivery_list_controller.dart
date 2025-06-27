@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
+import '../../http/api/auth_api.dart';
+import '../widgets/loading_manager.dart';
+
 class DeliveryListController extends GetxController  with GetTickerProviderStateMixin{
   late TabController tabController;
 
@@ -46,6 +49,8 @@ class DeliveryListController extends GetxController  with GetTickerProviderState
     },
   ].obs;
 
+
+
   @override
   void onInit() {
     super.onInit();
@@ -54,21 +59,25 @@ class DeliveryListController extends GetxController  with GetTickerProviderState
 
   @override
   void onClose() {
-    // ✅ 记得释放资源
     tabController.dispose();
+    dispose();
     super.onClose();
   }
 
-  void navigateToDetail(Map<String, dynamic> item, String status) {
-    if (status == 'pending') {
-      Get.toNamed('/pending-delivery-detail', arguments: {
-        'trackingNumber': 'SF123456789CN',
-      });
-      // Get.toNamed('/pending-delivery-detail', arguments: {'item': item});
-    } else if (status == 'completed') {
-      Get.toNamed('/complete-delivery-detail', arguments: {'item': item});
-    } else if (status == 'failed') {
-      Get.toNamed('/exception-report', arguments: {'trackingNumber': item['trackingNumber']});
+  void navigateToDetail(Map<String, dynamic> order, String type) {
+    // 根据类型导航到不同的详情页
+    switch (type) {
+      case 'pending':
+        Get.toNamed('/pending-delivery-detail', arguments: order);
+        break;
+      case 'completed':
+        Get.toNamed('/complete-delivery-detail', arguments: order);
+        break;
+      case 'failed':
+        Get.toNamed('/delivery/failed_detail', arguments: order);
+        break;
+      default:
+        Get.snackbar('错误', '未知的订单类型');
     }
   }
 }

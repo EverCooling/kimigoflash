@@ -7,9 +7,9 @@
         <compositeConfiguration>
           <compositeBuild compositeDefinitionSource="SCRIPT">
             <builds>
-              <build path="/opt/homebrew/Caskroom/flutter/3.32.3/flutter/packages/flutter_tools/gradle" name="gradle">
+              <build path="$USER_HOME$/fvm/versions/3.32.4/packages/flutter_tools/gradle" name="gradle">
                 <projects>
-                  <project path="/opt/homebrew/Caskroom/flutter/3.32.3/flutter/packages/flutter_tools/gradle" />
+                  <project path="$USER_HOME$/fvm/versions/3.32.4/packages/flutter_tools/gradle" />
                 </projects>
               </build>
             </builds>
@@ -20,12 +20,24 @@
         <option name="gradleJvm" value="#GRADLE_LOCAL_JAVA_HOME" />
         <option name="modules">
           <set>
+            <option value="$USER_HOME$/.pub-cache/hosted/pub.dev/connectivity_plus-5.0.2/android" />
+            <option value="$USER_HOME$/.pub-cache/hosted/pub.dev/device_info_plus-11.5.0/android" />
+            <option value="$USER_HOME$/.pub-cache/hosted/pub.dev/flutter_keyboard_visibility-6.0.0/android" />
             <option value="$USER_HOME$/.pub-cache/hosted/pub.dev/flutter_plugin_android_lifecycle-2.0.28/android" />
+            <option value="$USER_HOME$/.pub-cache/hosted/pub.dev/fluttertoast-8.2.12/android" />
+            <option value="$USER_HOME$/.pub-cache/hosted/pub.dev/image_cropper-9.1.0/android" />
+            <option value="$USER_HOME$/.pub-cache/hosted/pub.dev/image_gallery_saver_plus-4.0.1/android" />
             <option value="$USER_HOME$/.pub-cache/hosted/pub.dev/image_picker_android-0.8.12+23/android" />
             <option value="$USER_HOME$/.pub-cache/hosted/pub.dev/mobile_scanner-7.0.1/android" />
+            <option value="$USER_HOME$/.pub-cache/hosted/pub.dev/path_provider_android-2.2.17/android" />
+            <option value="$USER_HOME$/.pub-cache/hosted/pub.dev/permission_handler_android-13.0.1/android" />
+            <option value="$USER_HOME$/.pub-cache/hosted/pub.dev/photo_manager-3.7.1/android" />
+            <option value="$USER_HOME$/.pub-cache/hosted/pub.dev/shared_preferences_android-2.4.10/android" />
+            <option value="$USER_HOME$/.pub-cache/hosted/pub.dev/vibration-3.1.3/android" />
+            <option value="$USER_HOME$/.pub-cache/hosted/pub.dev/video_player_android-2.8.7/android" />
+            <option value="$USER_HOME$/fvm/versions/3.32.4/packages/flutter_tools/gradle" />
             <option value="$PROJECT_DIR$" />
             <option value="$PROJECT_DIR$/app" />
-            <option value="/opt/homebrew/Caskroom/flutter/3.32.3/flutter/packages/flutter_tools/gradle" />
           </set>
         </option>
       </GradleProjectSettings>

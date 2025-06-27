@@ -1,6 +1,5 @@
 import 'package:flutter/cupertino.dart';
 import 'package:get/get.dart';
-
 import '../../http/api/token_manager.dart';
 
 class OutboundScanController extends GetxController {

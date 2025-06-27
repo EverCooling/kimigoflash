@@ -10,39 +10,42 @@ class DeliveryListItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
+    return GestureDetector(
       onTap: onTap,
       child: Card(
         elevation: 2,
-        margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
-        child: Padding(
-          padding: const EdgeInsets.all(12.0),
-          child: Column(
+        margin: const EdgeInsets.symmetric(vertical: 8,horizontal: 12),
+        child: ListTile(
+          // leading: Icon(Icons.assignment_outlined), // 单号图标
+          minVerticalPadding: 16,
+          contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+          title: Text('单号：${item['kySmallShipment'] ?? ''}'),
+          subtitle: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text('单号：${item['trackingNumber']}', style: TextStyle(fontWeight: FontWeight.bold)),
-                  Chip(
-                    label: Text(item['deliveryMethod']?.toString() ?? ''),
-                    backgroundColor: item['deliveryMethod'] == '上门'
-                        ? Colors.blue.shade100
-                        : Colors.green.shade100,
-                    labelStyle: TextStyle(color: Colors.black),
-                  ),
-                ],
-              ),
-              SizedBox(height: 4),
-              Text('订单来源：${item['orderSource']}'),
-              SizedBox(height: 4),
-              Text('收件人：${item['recipientName']} (${item['recipientPhone']})'),
-              SizedBox(height: 4),
-              Text('地址：${item['address']}'),
+              SizedBox(height: 10),
+              Row(children: [
+                Icon(Icons.shop_outlined, size: 16, color: Colors.red), // 订单来源图标
+                SizedBox(width: 4),
+                Text('订单来源：${item['orderSource'] ?? ''}'),
+              ]),
+              SizedBox(height: 10),
+              Row(children: [
+                Icon(Icons.person_outline, size: 16, color: Colors.red), // 收件人图标
+                SizedBox(width: 4),
+                Text('收件人：${item['recipientName'] ?? ''}'),
+              ]),
+              SizedBox(height: 10),
+              Row(children: [
+                Icon(Icons.location_on_outlined, size: 16, color: Colors.red), // 地址图标
+                SizedBox(width: 4),
+                Text('地址：${item['recipetenAddressFirst'] ?? ''}${item['recipetenAddressSecond'] ?? ''}${item['recipetenAddressThid'] ?? ''}'),
+              ]),
             ],
           ),
         ),
       ),
     );
+
   }
 }

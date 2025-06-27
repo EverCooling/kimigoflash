@@ -1,16 +1,15 @@
+import 'dart:developer' as Get;
+import 'dart:io';
+
+import 'package:get/get_connect/http/src/multipart/form_data.dart' hide FormData;
 import 'package:kimiflash/http/api/api_response.dart';
 import 'package:kimiflash/http/http_client.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:kimiflash/http/api/token_manager.dart';
-import 'package:dio/dio.dart'; // 添加Dio导入
 import 'dart:convert';
 import 'package:http/http.dart' as http; // 用于MultipartRequest
-import 'package:kimiflash/http/api/api_response.dart';
-import 'package:kimiflash/http/http_client.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:kimiflash/http/api/token_manager.dart';
+import 'package:dio/dio.dart'; // 用于访问dio实例
 
 class AuthApi {
+  // 使用单例实例
   final ApiService _client = ApiService();
 
 // 修改后的接口调用示例
@@ -31,13 +30,11 @@ class AuthApi {
 
 
 //签收校验接口
-  Future<ApiResponse> CheckOrderIsDeliver(String orderNumber) async {
+  Future<ApiResponse> CheckOrderIsDeliver(Map<String,dynamic> queryParameters) async {
     try {
-      final response = await _client.get(
-        '/api/DeliveryMan/CheckOrderIsDeliver',
-        queryParameters: {
-          'kyInStorageNumber': orderNumber,
-        }
+      final response = await _client.post(
+        '/delivery-man/delivery-man-check-order-delivery',
+        data: queryParameters
       );
 
       // 使用ApiResponse.parse方法解析响应
@@ -68,7 +65,62 @@ class AuthApi {
     }
   }
 
-  //签收提交接口
+  //出仓扫描批量提交
+  Future<ApiResponse> DeliveryManBatchOutWarehouse(Map<String,dynamic> queryParameters) async{
+    try {
+      final response = await _client.post(
+        '/delivery-man/delivery-man-batch-out-warehouse',
+        data: queryParameters,
+      );
+
+      // 使用ApiResponse.parse方法解析响应
+      return ApiResponse.parse(response.data);
+    } catch (e) {
+      return ApiResponse.failure(
+        msg: '验证出错: ${e.toString()}',
+        code: 500,
+      );
+    }
+  }
+
+  //签收扫描提交接口
+  Future<ApiResponse> DeliveryManAddOrderDelivery(Map<String,dynamic> queryParameters) async{
+    try {
+      final response = await _client.post(
+        '/delivery-man/delivery-man-add-order-delivery',
+        data: queryParameters,
+      );
+
+      // 使用ApiResponse.parse方法解析响应
+      return ApiResponse.parse(response.data);
+    } catch (e) {
+      return ApiResponse.failure(
+        msg: '验证出错: ${e.toString()}',
+        code: 500,
+      );
+    }
+  }
+
+  //派送异常登记
+  Future<ApiResponse> DeliveryManAbnormalRegister(Map<String,dynamic> queryParameters) async{
+    try {
+      final response = await _client.post(
+        '/delivery-man/delivery-man-add-order-delivery',
+        data: queryParameters,
+      );
+
+      // 使用ApiResponse.parse方法解析响应
+      return ApiResponse.parse(response.data);
+    } catch (e) {
+      return ApiResponse.failure(
+        msg: '验证出错: ${e.toString()}',
+        code: 500,
+      );
+    }
+  }
+
+
+  //签收扫描提交接口
   Future<ApiResponse> DeliverManScanOutWarehouse(Map<String,dynamic> queryParameters) async{
     try {
       final response = await _client.post(
@@ -86,29 +138,137 @@ class AuthApi {
     }
   }
 
-  //Todo  使用http包实现的独立上传图片方法
-  Future<ApiResponse> uploadImage(String filepath) async {
+  //上传图片
+  Future<ApiResponse> uploadImage(String path) async {
     try {
-      final url = Uri.parse('http://114.55.176.141:8081/api/Upload/ImportData');
-      final request = http.MultipartRequest('POST', url)
-        ..fields['filepath'] = filepath
-        ..fields['name'] =  'file'
-        ..fields['formData'];
+      // 直接使用FormData和MultipartFile的构造函数
+      final formData = FormData.fromMap({
+        'file': await MultipartFile.fromFile(path, filename: path.split('/').last),
+      });
+
+      final response = await _client.post(
+          '/api/Upload/ImportData',
+          data: {
+            'filePath': path,
+            'name':"file"
+          },
+      );
+      return ApiResponse.parse(response.data);
+    } catch (e) {
+      throw Exception('图片上传失败: $e');
+    }
+  }
+
+  // 上传单个文件
+  Future<ApiResponse> uploadFile(File file,
+      {Map<String, dynamic>? queryParameters,
+        Function(int, int)? onSendProgress}) async {
+    try {
+      FormData formData = FormData.fromMap({
+        'file': await MultipartFile.fromFile(file.path),
+        // 可以添加其他字段
+        'timestamp': DateTime.now().millisecondsSinceEpoch,
+      });
+
+      // 创建带有新基础URL的HttpClient实例
+      // final client = HttpClient(baseUrl: 'https://admapi.qa.kimigoshop.com');
+      final response = await _client.post(
+        'https://admapi.qa.kimigoshop.com/api/Upload/ImportData',
+        data: formData,
+        queryParameters: queryParameters,
+      );
+      return ApiResponse.parse(response.data);
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  // 上传多个文件
+  Future<ApiResponse> uploadFiles(List<File> files,
+      {Map<String, dynamic>? queryParameters,
+        Function(int, int)? onSendProgress}) async {
+    try {
+      List<MultipartFile> multipartFiles = [];
+      for (var file in files) {
+        multipartFiles.add(await MultipartFile.fromFile(file.path));
+      }
+
+      FormData formData = FormData.fromMap({
+        'files': multipartFiles,
+        // 可以添加其他字段
+        'timestamp': DateTime.now().millisecondsSinceEpoch,
+      });
+
+      final response = await _client.post(
+        '/api/Upload/ImportData',
+        data: formData,
+        queryParameters: queryParameters,
+      );
+      return ApiResponse.parse(response.data);
+    } catch (e) {
+      rethrow;
+    }
+  }
 
 
-      final response = await request.send();
-      final responseBody = await response.stream.bytesToString();
 
-      // 假设返回的是JSON格式字符串，需要根据实际接口响应调整解析逻辑
-      final parsedResponse = jsonDecode(responseBody);
+//查询派送列表
+  Future<ApiResponse> DeliverManQueryDeliveryList(Map<String,dynamic> queryParameters) async{
+    try {
+      final response = await _client.post(
+          '/delivery-man/delivery-man-query-delivery-list',
+          data: queryParameters
+      );
 
-      return ApiResponse.parse(parsedResponse);
+      // 使用ApiResponse.parse方法解析响应
+      return ApiResponse.parse(response.data);
     } catch (e) {
       return ApiResponse.failure(
-        msg: 'HTTP上传出错: ${e.toString()}',
+        msg: '验证出错: ${e.toString()}',
         code: 500,
       );
     }
   }
+
+  //查询派送列表
+  Future<ApiResponse> DeliverManDeliveryDetail(Map<String,dynamic> queryParameters) async{
+    print(queryParameters);
+    try {
+      final response = await _client.post(
+          '/delivery-man/delivery-man-delivery-detail',
+          data: queryParameters
+      );
+
+      // 使用ApiResponse.parse方法解析响应
+      return ApiResponse.parse(response.data);
+    } catch (e) {
+      return ApiResponse.failure(
+        msg: '验证出错: ${e.toString()}',
+        code: 500,
+      );
+    }
+  }
+
+  // //查询派送详情
+  // Future<ApiResponse> DeliverManDeliveryDetail(Map<String,dynamic> queryParameters) async{
+  //   try {
+  //     final response = await _client.post(
+  //         '/delivery-man/delivery-man-delivery-detail',
+  //         data: queryParameters
+  //     );
+  //
+  //     // 使用ApiResponse.parse方法解析响应xx
+  //     return ApiResponse.parse(response.data);
+  //   } catch (e) {
+  //     return ApiResponse.failure(
+  //       msg: '验证出错: ${e.toString()}',
+  //       code: 500,
+  //     );
+  //   }
+  // }
+
+
+
+
 }
 

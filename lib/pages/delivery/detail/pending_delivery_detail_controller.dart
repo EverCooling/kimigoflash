@@ -1,12 +1,10 @@
-// lib/pages/delivery/detail/pending_delivery_detail_controller.dart
 import 'dart:ui';
-
 import 'package:get/get.dart';
 
 class PendingDeliveryDetailController extends GetxController {
-  final Map<String, dynamic> deliveryItem;
-
-  PendingDeliveryDetailController({required this.deliveryItem});
+  // final Map<String, dynamic> deliveryItem;
+  //
+  // PendingDeliveryDetailController({required this.deliveryItem});
 
   String? selectedMethod;
   final List<String> methods = ['本人签收', '家人代签收', '自提签收'];

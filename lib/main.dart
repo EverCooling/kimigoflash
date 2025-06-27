@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:get/get.dart';
+import 'package:kimiflash/theme/app_colors.dart';
 import 'route/app_pages.dart';
 
 void main() {
@@ -21,7 +22,7 @@ class MyApp extends StatelessWidget {
       getPages: AppPages.pages,
       theme: ThemeData(
         primarySwatch: Colors.blue,
-        appBarTheme: const AppBarTheme(color: Colors.blue),
+        appBarTheme: AppBarTheme(color:  AppColors.redGradient[400]),
       ),
       defaultTransition: Transition.rightToLeft,
       transitionDuration: const Duration(milliseconds: 300),

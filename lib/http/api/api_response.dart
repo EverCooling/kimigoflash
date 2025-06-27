@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 class ApiResponse<T> {
   final T? data;
   final bool success;
@@ -14,13 +16,37 @@ class ApiResponse<T> {
   });
 
   // 新增的通用解析方法
-  static ApiResponse<dynamic> parse(Map<String, dynamic> response) {
-    final code = response['code'] as int? ?? 400;
-    final success = response['success'] as bool? ?? false;
-    final msg = response['msg'] as String? ?? 'Request failed';
-    final token = response['token'] as String?;
+  static ApiResponse<dynamic> parse(dynamic response) {
+    Map<String, dynamic> dataMap = {};
+    bool isRawString = false;
 
-    final data = _parseDataField(response['data']);
+    if (response is String) {
+      try {
+        // 判断是否为JSON字符串
+        final decoded = json.decode(response);
+        if (decoded is Map<String, dynamic>) {
+          dataMap = decoded;
+        } else {
+          isRawString = true;
+          dataMap['value'] = decoded.toString();
+        }
+      } catch (e) {
+        // 非JSON字符串，视为原始字符串值
+        dataMap['value'] = response;
+        isRawString = true;
+      }
+    } else if (response is Map<String, dynamic>) {
+      dataMap = response;
+    } else {
+      return ApiResponse.failure(msg: '无效的响应格式');
+    }
+
+    final code = isRawString ? 200 : dataMap['code'] as int? ?? 400;
+    final success = isRawString || (dataMap['success'] as bool? ?? false);
+    final msg = isRawString ? '请求成功' : dataMap['msg'] as String? ?? 'Request failed';
+    final token = dataMap['token'] as String?;
+
+    final data = _parseDataField(isRawString ? dataMap['value'] : (dataMap['data'] ?? dataMap));
 
     return ApiResponse<dynamic>(
       code: code,

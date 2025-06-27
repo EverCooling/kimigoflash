@@ -13,12 +13,11 @@ import 'package:riverpod/src/framework.dart';
 import '../../http/api/auth_api.dart';
 import '../widgets/custom_dropdown_field.dart';
 import '../widgets/custom_text_field.dart';
-import '../widgets/multi_image_picker_field.dart';
 import '../widgets/sign_method_bottom_sheet.dart';
 import '../widgets/signature_pad.dart';
 import '../widgets/signature_preview.dart';
 import 'package:loading_overlay/loading_overlay.dart';
-
+import 'package:permission_handler/permission_handler.dart';
 
 class SignReceiptScanPage extends StatefulWidget {
   const SignReceiptScanPage({Key? key}) : super(key: key);
@@ -40,10 +39,18 @@ class _SignReceiptScanPageState extends State<SignReceiptScanPage> {
 
   final AuthApi _authApi = AuthApi();
 
+  Future<void> _uploadImage(String path) async {
+
+  }
+
   Future<void> _verifyOrder(String orderNumber) async {
     setState(() => _isLoading = true);
     try {
-      final response = await _authApi.CheckOrderIsDeliver(orderNumber);
+      final response = await _authApi.CheckOrderIsDeliver({
+        "kyInStorageNumber": orderNumber,
+        "customerCode": "10010",
+        "lang": "zh"
+      });
       setState(() {
         _isLoading = false;
       });
@@ -179,13 +186,17 @@ class _SignReceiptScanPageState extends State<SignReceiptScanPage> {
 
                         // 客户签字板
                         SignaturePreview(
-                          onSignatureChanged: (signatureBytes) {
-                            setState(() {
-                              _signatureData = signatureBytes;
-                              _statusMessage = signatureBytes == null
-                                  ? '签名已清除，请重新签名'
-                                  : '签名已完成';
-                            });
+                          onSignatureChanged: (signatureBytes) async {
+                            print("客户签字");
+                            if(_signatureData != null){
+                              setState(() {
+                                _signatureData = signatureBytes;
+                                _statusMessage = signatureBytes == null
+                                    ? '签名已清除，请重新签名'
+                                    : '签名已完成';
+                              });
+                            }
+
                           },
                         ),
                         SizedBox(height: 32),

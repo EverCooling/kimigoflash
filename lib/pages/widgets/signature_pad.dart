@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'dart:ui' as ui;
@@ -141,14 +142,17 @@ class _SyncfusionSignaturePadWidgetState extends State<SyncfusionSignaturePadWid
     setState(() => _isSaving = true);
 
     // 请求存储权限
-    final status = await Permission.storage.request();
-    if (!status.isGranted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('需要存储权限才能保存签名'))
-      );
-      setState(() => _isSaving = false);
-      return;
+    if (Platform.isAndroid) {
+      final status = await Permission.storage.request();
+      if (!status.isGranted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('需要存储权限才能保存签名'))
+        );
+        setState(() => _isSaving = false);
+        return;
+      }
     }
+
 
     try {
       // 获取签名图片

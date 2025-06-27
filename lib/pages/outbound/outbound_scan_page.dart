@@ -1,13 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:kimiflash/http/api/token_manager.dart';
-import 'package:kimiflash/pages/screens/mobile_scanner_advanced.dart';
 import 'package:loading_overlay/loading_overlay.dart';
-
 import '../../http/api/auth_api.dart';
-import '../widgets/custom_dropdown_field.dart';
 import '../widgets/custom_text_field.dart';
-import '../widgets/sign_method_bottom_sheet.dart';
 import 'outbound_scan_controller.dart'; // 引入控制器
 
 class OutboundScanPage extends StatefulWidget {
@@ -20,10 +15,17 @@ class OutboundScanPage extends StatefulWidget {
 
 class _OutboundScanPageState extends State<OutboundScanPage> {
   bool _isLoading = false;
+  final controller = Get.put(OutboundScanController());
 
   final AuthApi _authApi = AuthApi();
 
   Future<void> _verifyOrder(String orderNumber) async {
+    final isValid = RegExp(r'^(GR|UKG).+').hasMatch(orderNumber);
+    if (!isValid) {
+      Get.snackbar('错误', '单号有误，请重新操作');
+      return;
+    }
+
     setState(() => _isLoading = true);
     try {
       final response = await _authApi.DeliverManScanOutWarehouse({
@@ -37,6 +39,9 @@ class _OutboundScanPageState extends State<OutboundScanPage> {
 
       if (response.code == 200) {
         Get.snackbar('成功', '单号验证成功');
+        await _deliveryManBatchOutWarehouse(orderNumber);
+        controller.scannedList.add(orderNumber);
+
       } else {
         Get.snackbar('失败', response.msg ?? '验证失败');
       }
@@ -45,14 +50,32 @@ class _OutboundScanPageState extends State<OutboundScanPage> {
       Get.snackbar('错误', e.toString());
     }
   }
+
+
+  Future<void>  _deliveryManBatchOutWarehouse(String orderNumber) async {
+    // 新增：调用上传接口
+    try {
+      final uploadResponse = await _authApi.DeliveryManBatchOutWarehouse({
+        'kyInStorageNumberList': [orderNumber],
+        "customerCode": "10010"
+      });
+
+      if (uploadResponse.code == 200) {
+        Get.snackbar('上传成功', '单号已上传');
+        controller.uploadedList.add(orderNumber);
+      } else {
+        Get.snackbar('上传失败', uploadResponse.msg ?? '上传出错');
+      }
+    } catch (e) {
+      Get.snackbar('上传异常', e.toString());
+    }
+  }
+
+
   @override
   Widget build(BuildContext context) {
-    final controller = Get.put(OutboundScanController());
-    final RegExp trackingNumberRegex = RegExp(r'^(GR|KG).+');
-    bool isLoading = false;
-
     return LoadingOverlay(
-        isLoading: isLoading,
+        isLoading: _isLoading,
         progressIndicator: CircularProgressIndicator(),
         child: Scaffold(
           appBar: AppBar(title: Text('出仓扫描')),
@@ -79,14 +102,13 @@ class _OutboundScanPageState extends State<OutboundScanPage> {
                         name: 'trackingNumber',
                         labelText: '扫描单号',
                         hintText: '请输入运单号',
+                        controller: controller.scanController,
                         prefixIcon: Icons.vertical_distribute,
                         suffixIcon: Icons.barcode_reader,
                         onSuffixPressed: () async {
                           final barcodeResult = await Get.toNamed('/scanner');
                           if (barcodeResult != null) {
-                            isLoading = true;
                             await _verifyOrder(barcodeResult);
-                            isLoading = false;
                           }
                         },
                         onSubmitted: (value) async {
@@ -99,54 +121,45 @@ class _OutboundScanPageState extends State<OutboundScanPage> {
                       Row(
                         children: [
                           Expanded(
-                            child: Card(
-                              elevation: 0,
-                              child: Padding(
-                                padding: const EdgeInsets.all(8.0),
-                                child: Column(
-                                  children: [
-                                    Text('已扫描', style: TextStyle(fontWeight: FontWeight.bold)),
-                                    Divider(),
-                                    Obx(() => SizedBox(
-                                      height: 400, // 固定高度
-                                      child: ListView.builder(
-                                        itemCount: controller.scannedList.length,
-                                        itemBuilder: (context, index) {
-                                          return ListTile(title: Text(controller.scannedList[index]));
-                                        },
-                                      ),
-                                    )),
-                                  ],
-                                ),
+                            child: Container(
+                              height: 400,
+                              child: ListView(
+                                shrinkWrap: true,
+                                physics: NeverScrollableScrollPhysics(),
+                                children: [
+                                  Center(child: Text('已扫描 (${controller.scannedList.length})', style: TextStyle(fontWeight: FontWeight.bold))),
+                                  Divider(),
+                                  Obx(() {
+                                    return Column(
+                                      children: controller.scannedList.map((item) => ListTile(title: Text(item),minTileHeight: 10,contentPadding: EdgeInsets.all(0))).toList(),
+                                    );
+                                  }),
+                                ],
                               ),
                             ),
                           ),
-                          // SizedBox(width: 10),
+                          SizedBox(width: 16),
                           Expanded(
-                            child: Card(
-                              elevation: 0,
-                              child: Padding(
-                                padding: const EdgeInsets.all(8.0),
-                                child: Column(
-                                  children: [
-                                    Text('已上传', style: TextStyle(fontWeight: FontWeight.bold)),
-                                    Divider(),
-                                    Obx(() => SizedBox(
-                                      height: 400, // 固定高度
-                                      child: ListView.builder(
-                                        itemCount: controller.uploadedList.length,
-                                        itemBuilder: (context, index) {
-                                          return ListTile(title: Text(controller.uploadedList[index]));
-                                        },
-                                      ),
-                                    )),
-                                  ],
-                                ),
+                            child: Container(
+                              height: 400,
+                              child: ListView(
+                                shrinkWrap: true,
+                                physics: NeverScrollableScrollPhysics(),
+                                children: [
+                                  Center(child: Text('已上传 (${controller.uploadedList.length})', style: TextStyle(fontWeight: FontWeight.bold))),
+                                  Divider(),
+                                  Obx(() {
+                                    return Column(
+                                      children: controller.uploadedList.map((item) => ListTile(title: Text(item),minTileHeight: 10,contentPadding: EdgeInsets.all(0),)).toList(),
+                                    );
+                                  }),
+                                ],
                               ),
                             ),
                           ),
                         ],
-                      ),
+                      )
+
                     ],
                   ),
                 ),
