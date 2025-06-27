@@ -118,7 +118,10 @@ class _MultiAlbumPickerFieldState extends State<MultiAlbumPickerField> {
                     top: -8,
                     right: -8,
                     child: IconButton(
-                      onPressed: () => (){
+                      onPressed: ()=> {
+                        setState(() {
+                          _uploadedPaths.removeAt(index);
+                        })
 
                       },
                       icon: Icon(Icons.cancel, color: Colors.red),
@@ -134,7 +137,7 @@ class _MultiAlbumPickerFieldState extends State<MultiAlbumPickerField> {
             if (_uploadedPaths.length < widget.maxSelection)
               InkWell(
                 onTap: ()=> {
-
+                _pickAndUploadImages()
                 },
                 child: Container(
                   width: 100,

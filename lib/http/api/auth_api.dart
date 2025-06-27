@@ -166,12 +166,8 @@ class AuthApi {
     try {
       FormData formData = FormData.fromMap({
         'file': await MultipartFile.fromFile(file.path),
-        // 可以添加其他字段
-        'timestamp': DateTime.now().millisecondsSinceEpoch,
       });
 
-      // 创建带有新基础URL的HttpClient实例
-      // final client = HttpClient(baseUrl: 'https://admapi.qa.kimigoshop.com');
       final response = await _client.post(
         'https://admapi.qa.kimigoshop.com/api/Upload/ImportData',
         data: formData,
@@ -195,12 +191,10 @@ class AuthApi {
 
       FormData formData = FormData.fromMap({
         'files': multipartFiles,
-        // 可以添加其他字段
-        'timestamp': DateTime.now().millisecondsSinceEpoch,
       });
 
       final response = await _client.post(
-        '/api/Upload/ImportData',
+        'https://admapi.qa.kimigoshop.com/api/Upload/ImportData',
         data: formData,
         queryParameters: queryParameters,
       );
