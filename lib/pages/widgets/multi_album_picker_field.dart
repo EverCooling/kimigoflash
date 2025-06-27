@@ -123,8 +123,8 @@ class _MultiAlbumPickerFieldState extends State<MultiAlbumPickerField> {
                    ),
                  ),
                   Positioned(
-                    top: -8,
-                    right: -8,
+                    top: -12,
+                    right: -12,
                     child: IconButton(
                       onPressed: ()=> {
                         setState(() {
