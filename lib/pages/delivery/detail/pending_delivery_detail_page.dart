@@ -27,6 +27,10 @@ class _PendingDeliveryDetailPageState extends State<PendingDeliveryDetail> {
   final AuthApi _authApi = AuthApi();
   final controller = Get.put(PendingDeliveryDetailController());
   late Map<String, dynamic> deliveryDetails; // 用于存储请求返回的数据
+  List<String>? _receiptImageUrls;
+  String? _signatureImageUrl;
+  final _formKey = GlobalKey<FormBuilderState>();
+  bool _isLoading = false;
 
   @override
   void initState() {
@@ -48,6 +52,45 @@ class _PendingDeliveryDetailPageState extends State<PendingDeliveryDetail> {
         return '未知签收类型';
     }
   }
+
+  Future<void> _submit() async {
+    print('提交按钮点击'); // 调试输出
+    setState(() => _isLoading = true);
+
+    final form = _formKey.currentState;
+    if (form?.saveAndValidate() ?? false) {
+      try {
+        // 获取表单值
+        final Map<String, dynamic> formData = form!.value;
+        final String trackingNumber = formData['kySmallShipment'] ?? '';
+        final String signMethod = formData['signMethod'] ?? '';
+
+        // 调用API提交数据
+        final response = await _authApi.DeliveryManAddOrderDelivery({
+          'kyInStorageNumber': trackingNumber,
+          'signForType': signMethod,
+          'signForImg': _receiptImageUrls?.isNotEmpty == true ? _receiptImageUrls![0] : '',
+          'signature': _signatureImageUrl ?? '',
+          'customerCode':'10010'
+        });
+
+        setState(() => _isLoading = false);
+
+        if (response.code == 200) {
+          Get.snackbar('成功', '签收成功');
+        } else {
+          Get.snackbar('失败', response.msg ?? '验证失败');
+        }
+      } catch (e) {
+        setState(() => _isLoading = false);
+        Get.snackbar('错误', e.toString());
+      }
+    } else {
+      setState(() => _isLoading = false);
+      print('表单验证失败');
+    }
+  }
+
 
   Future<void> _fetchOrders(int orderId) async {
     try {
@@ -77,7 +120,7 @@ class _PendingDeliveryDetailPageState extends State<PendingDeliveryDetail> {
     final _formKey = GlobalKey<FormBuilderState>();
 
     return Scaffold(
-      appBar: AppBar(title: const Text('签收详情')),
+      appBar: AppBar(title: const Text('派送详情')),
       body: Column(
         children: [
           // 可滚动内容区域
@@ -155,6 +198,7 @@ class _PendingDeliveryDetailPageState extends State<PendingDeliveryDetail> {
                       label: '上传签收图片',
                       maxSelection: 5,
                       onImageUploaded: (imagePaths) {
+                        _receiptImageUrls = imagePaths;
                         // 处理上传后的图片路径列表
                         print('上传成功：$imagePaths');
                       },
@@ -163,7 +207,8 @@ class _PendingDeliveryDetailPageState extends State<PendingDeliveryDetail> {
 
                     // 8. 客户签字板
                     SignaturePreview(
-                      onSignatureChanged: (signatureBytes) {
+                      onSignatureChanged: (url) {
+                        _signatureImageUrl = url;
                         // controller.setSignature(signatureBytes);
                       },
                     ),
@@ -180,6 +225,7 @@ class _PendingDeliveryDetailPageState extends State<PendingDeliveryDetail> {
             child: ElevatedButton(
               onPressed: () {
                 if (_formKey.currentState?.saveAndValidate() ?? false) {
+                   _submit();
                   // controller.submitForm(_formKey.currentState!.value);
                 }
               },

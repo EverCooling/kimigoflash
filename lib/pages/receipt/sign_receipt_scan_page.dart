@@ -7,6 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:get/get.dart';
 import 'package:get/get_core/src/get_main.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:kimiflash/pages/receipt/sign_receipt_scan_controller.dart';
 import 'package:kimiflash/pages/widgets/multi_album_picker_field.dart';
 import 'package:kimiflash/pages/widgets/signature_preview.dart';
 import 'package:riverpod/src/framework.dart';
@@ -29,19 +30,17 @@ class SignReceiptScanPage extends StatefulWidget {
 
 class _SignReceiptScanPageState extends State<SignReceiptScanPage> {
   final _formKey = GlobalKey<FormBuilderState>();
+  final controller = Get.put(SignReceiptScanController());
+
   bool _isLoading = false;
   String? _uploadedImage;
   final ImagePicker _picker = ImagePicker();
-  Uint8List? _signatureData;
   String _statusMessage = '请在下方签名';
   String _kyInStorageNumber = '';
-  List<File>? _receiptImages;
+  List<String>? _receiptImageUrls;
+  String? _signatureImageUrl;
 
   final AuthApi _authApi = AuthApi();
-
-  Future<void> _uploadImage(String path) async {
-
-  }
 
   Future<void> _verifyOrder(String orderNumber) async {
     setState(() => _isLoading = true);
@@ -66,30 +65,31 @@ class _SignReceiptScanPageState extends State<SignReceiptScanPage> {
     }
   }
 
-  final List<String> _methods = [
-    '本人签收',
-    '自提签收',
-    '其他签收',
-  ];
-
-  Future<void>  _submit() async{
+  Future<void> _submit() async {
+    print('提交按钮点击'); // 调试输出
     setState(() => _isLoading = true);
 
     final form = _formKey.currentState;
     if (form?.saveAndValidate() ?? false) {
       try {
-        final response = await _authApi.DeliverSignFor({
-          'kyInStorageNumber': 'ureutreu',
-          'signForType': '1',
-          'signForImg': 'http://www.baidu.com',
-          'signature':''
-        });
-        setState(() {
-          _isLoading = false;
+        // 获取表单值
+        final Map<String, dynamic> formData = form!.value;
+        final String trackingNumber = formData['trackingNumber'] ?? '';
+        final String signMethod = formData['signMethod'] ?? '';
+
+        // 调用API提交数据
+        final response = await _authApi.DeliveryManAddOrderDelivery({
+          'kyInStorageNumber': trackingNumber,
+          'signForType': signMethod,
+          'signForImg': _receiptImageUrls?.isNotEmpty == true ? _receiptImageUrls![0] : '',
+          'signature': _signatureImageUrl ?? '',
+          'customerCode':'10010'
         });
 
+        setState(() => _isLoading = false);
+
         if (response.code == 200) {
-          Get.snackbar('成功', '成功');
+          Get.snackbar('成功', '签收成功');
         } else {
           Get.snackbar('失败', response.msg ?? '验证失败');
         }
@@ -97,8 +97,12 @@ class _SignReceiptScanPageState extends State<SignReceiptScanPage> {
         setState(() => _isLoading = false);
         Get.snackbar('错误', e.toString());
       }
+    } else {
+      setState(() => _isLoading = false);
+      print('表单验证失败');
     }
   }
+
 
   @override
   Widget build(BuildContext context) {
@@ -144,14 +148,14 @@ class _SignReceiptScanPageState extends State<SignReceiptScanPage> {
                         CustomDropdownField(
                           name: 'signMethod',
                           labelText: '签收方式',
-                          items: _methods,
+                          items: controller.methods,
                           initialValue: null,
                           onTap: (context) async {
                             return await
                             // 高级使用方式（自定义样式）
                             SignMethodBottomSheet.show(
                               context,
-                              methods: _methods,
+                              methods: controller.methods,
                               initialValue: null,
                               title: '选择派件方式',
                               titleStyle: TextStyle(fontSize: 20, color: Colors.blue),
@@ -178,6 +182,7 @@ class _SignReceiptScanPageState extends State<SignReceiptScanPage> {
                           label: '上传签收图片',
                           maxSelection: 5,
                           onImageUploaded: (imagePaths) {
+                            _receiptImageUrls = imagePaths;
                             // 处理上传后的图片路径列表
                             print('上传成功：$imagePaths');
                           },
@@ -186,17 +191,14 @@ class _SignReceiptScanPageState extends State<SignReceiptScanPage> {
 
                         // 客户签字板
                         SignaturePreview(
-                          onSignatureChanged: (signatureBytes) async {
+                          onSignatureChanged: (url) async {
                             print("客户签字");
-                            if(_signatureData != null){
-                              setState(() {
-                                _signatureData = signatureBytes;
-                                _statusMessage = signatureBytes == null
-                                    ? '签名已清除，请重新签名'
-                                    : '签名已完成';
-                              });
-                            }
-
+                            setState(() {
+                              _signatureImageUrl = url;
+                              _signatureImageUrl = url == null
+                                  ? '签名已清除，请重新签名'
+                                  : '签名已完成';
+                            });
                           },
                         ),
                         SizedBox(height: 32),
@@ -210,7 +212,12 @@ class _SignReceiptScanPageState extends State<SignReceiptScanPage> {
               Padding(
                 padding: EdgeInsets.all(16.0),
                 child: ElevatedButton(
-                  onPressed: _submit,
+                  onPressed: () {
+                    print('提交按钮点击'); // 调试输出
+                    if (!_isLoading) {
+                      _submit();
+                    }
+                  },
                   style: ElevatedButton.styleFrom(
                     minimumSize: Size(double.infinity, 50),
                   ),

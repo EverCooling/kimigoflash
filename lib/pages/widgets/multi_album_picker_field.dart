@@ -1,4 +1,3 @@
-// lib/widgets/multi_album_picker_field.dart
 import 'package:flutter/material.dart';
 import 'package:wechat_assets_picker/wechat_assets_picker.dart';
 import 'package:image_picker/image_picker.dart';

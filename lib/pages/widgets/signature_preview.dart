@@ -1,22 +1,21 @@
 import 'dart:typed_data';
-
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:kimiflash/pages/widgets/signature_pad.dart';
 
 class SignaturePreview extends StatefulWidget {
   const SignaturePreview({Key? key, this.onSignatureChanged}) : super(key: key);
-  final ValueChanged<Uint8List?>? onSignatureChanged;
+  final ValueChanged<String?>? onSignatureChanged;
 
   @override
   State<SignaturePreview> createState() => _SignaturePreviewState();
 }
 
 class _SignaturePreviewState extends State<SignaturePreview> {
-  Uint8List? _signatureBytes;
+  String? _signatureUrl;
 
   void _showSignatureDialog(BuildContext context) async {
-    final result = await showDialog<Uint8List>(
+    final result = await showDialog<String>(
       context: context,
       builder: (context) => Dialog(
         child: Padding(
@@ -27,8 +26,9 @@ class _SignaturePreviewState extends State<SignaturePreview> {
               SizedBox(
                 height: 300,
                 child: SyncfusionSignaturePadWidget(
-                  onSaved: (bytes) {
-                    Navigator.of(context).pop(bytes);
+                  onUploadSuccess: (url) {
+                    Navigator.of(context).pop(url);
+                    print("输入结果===={$url}");
                   },
                 ),
               ),
@@ -42,15 +42,15 @@ class _SignaturePreviewState extends State<SignaturePreview> {
 
     if (result != null) {
       setState(() {
-        _signatureBytes = result;
+        _signatureUrl = result;
       });
-      widget.onSignatureChanged?.call(result); // 添加这行
+      widget.onSignatureChanged?.call(_signatureUrl); // 添加这行
     }
   }
 
   void _clearSignature() {
     setState(() {
-      _signatureBytes = null;
+      _signatureUrl = null;
     });
   }
 
@@ -71,12 +71,12 @@ class _SignaturePreviewState extends State<SignaturePreview> {
               borderRadius: BorderRadius.circular(8),
               color: Colors.white,
             ),
-            child: _signatureBytes == null
+            child: _signatureUrl == null
                 ? Center(child: Text('点击此处签名', style: TextStyle(color: Colors.grey)))
-                : Image.memory(_signatureBytes!),
+                : Image.network(_signatureUrl!),
           ),
         ),
-        if (_signatureBytes != null)
+        if (_signatureUrl != null)
           Padding(
             padding: const EdgeInsets.only(top: 8.0),
             child: Align(
