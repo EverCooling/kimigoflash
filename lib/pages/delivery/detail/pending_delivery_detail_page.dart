@@ -36,8 +36,10 @@ class _PendingDeliveryDetailPageState extends State<PendingDeliveryDetail> {
   void initState() {
     super.initState();
     deliveryDetails = {}; // 初始化为空对象
-    // 默认加载第一个 tab 的数据
     _fetchOrders(widget.deliveryItem['id']);
+    // WidgetsBinding.instance.addPostFrameCallback((_) {
+    //   _registerFieldValidators();
+    // });
   }
 
   String getSignForTypeName(int signForType) {
@@ -56,39 +58,29 @@ class _PendingDeliveryDetailPageState extends State<PendingDeliveryDetail> {
   Future<void> _submit() async {
     print('提交按钮点击'); // 调试输出
     setState(() => _isLoading = true);
+    try {
+      // 调用API提交数据
+      final response = await _authApi.DeliveryManAddOrderDelivery({
+        'kyInStorageNumber': deliveryDetails['kySmallShipment'],
+        'signForType':controller.selectedMethod,
+        'signForImg': _receiptImageUrls?.isNotEmpty == true ? _receiptImageUrls![0] : '',
+        'signature': _signatureImageUrl ?? '',
+        'customerCode':'10010'
+      });
 
-    final form = _formKey.currentState;
-    if (form?.saveAndValidate() ?? false) {
-      try {
-        // 获取表单值
-        final Map<String, dynamic> formData = form!.value;
-        final String trackingNumber = formData['kySmallShipment'] ?? '';
-        final String signMethod = formData['signMethod'] ?? '';
-
-        // 调用API提交数据
-        final response = await _authApi.DeliveryManAddOrderDelivery({
-          'kyInStorageNumber': trackingNumber,
-          'signForType': signMethod,
-          'signForImg': _receiptImageUrls?.isNotEmpty == true ? _receiptImageUrls![0] : '',
-          'signature': _signatureImageUrl ?? '',
-          'customerCode':'10010'
-        });
-
-        setState(() => _isLoading = false);
-
-        if (response.code == 200) {
-          Get.snackbar('成功', '签收成功');
-        } else {
-          Get.snackbar('失败', response.msg ?? '验证失败');
-        }
-      } catch (e) {
-        setState(() => _isLoading = false);
-        Get.snackbar('错误', e.toString());
-      }
-    } else {
       setState(() => _isLoading = false);
-      print('表单验证失败');
+
+      if (response.code == 200) {
+        Get.snackbar('成功', '签收成功');
+      } else {
+        Get.snackbar('失败', response.msg ?? '验证失败');
+      }
+    } catch (e) {
+      setState(() => _isLoading = false);
+      Get.snackbar('错误', e.toString());
     }
+
+
   }
 
 
@@ -224,9 +216,13 @@ class _PendingDeliveryDetailPageState extends State<PendingDeliveryDetail> {
             padding: const EdgeInsets.all(16.0),
             child: ElevatedButton(
               onPressed: () {
-                if (_formKey.currentState?.saveAndValidate() ?? false) {
-                   _submit();
-                  // controller.submitForm(_formKey.currentState!.value);
+                final form = _formKey.currentState;
+                if (form != null && form.saveAndValidate()) {
+                  _submit();
+                } else {
+                  print('表单未准备好或验证失败');
+                  // 可选：显示提示信息
+                  Get.snackbar('提示', '请检查表单内容是否完整正确', snackPosition: SnackPosition.BOTTOM);
                 }
               },
               style: ElevatedButton.styleFrom(
