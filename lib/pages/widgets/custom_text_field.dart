@@ -6,7 +6,6 @@ class CustomTextField extends StatelessWidget {
   final String labelText;
   final String hintText;
   final IconData? prefixIcon;
-  final bool isLoading;
   final VoidCallback? onSuffixPressed;
   final ValueChanged<String?>? onSubmitted;  // 修改类型
   final String? initialValue;
@@ -22,7 +21,6 @@ class CustomTextField extends StatelessWidget {
     this.controller,
     required this.hintText,
     this.prefixIcon,
-    this.isLoading = false,
     this.onSuffixPressed,
     this.onSubmitted,
     this.initialValue,

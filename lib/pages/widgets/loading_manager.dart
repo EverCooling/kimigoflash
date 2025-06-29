@@ -1,66 +1,49 @@
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
+import 'package:flutter_spinkit/flutter_spinkit.dart';
+import 'package:kimiflash/pages/widgets/square_loading.dart';
+import 'package:kimiflash/theme/app_colors.dart';
 
-class LoadingManager {
-  static bool _isLoading = false;
-
-  static void showLoading({String message = '加载中...'}) {
-    if (_isLoading) return;
-
-    _isLoading = true;
-
-    // 使用 Get.snackbar 展示 loading（轻量级）
-    Get.snackbar(
-      '',
-      message,
-      snackPosition: SnackPosition.BOTTOM,
-      backgroundColor: Colors.black.withOpacity(0.8),
-      colorText: Colors.white,
-      duration: Duration(minutes: 1), // 持续显示直到 hideLoading
-      dismissDirection: DismissDirection.down,
-      mainButton: TextButton(
-        onPressed: () {
-          hideLoading();
-        },
-        child: Text('取消', style: TextStyle(color: Colors.white)),
-      ),
-    );
-  }
-
-  static void hideLoading() {
-    if (!_isLoading) return;
-
-    _isLoading = false;
-    Get.closeCurrentSnackbar(); // 关闭 loading 提示
-  }
-
-
-//***********全屏**************
-
+class HUD {
+  static HUD? _instance;
   static OverlayEntry? _overlayEntry;
+  static bool _isShowing = false;
 
-  static void showFullScreenLoading([String? message]) {
-    if (_isLoading || _overlayEntry != null) return;
+  factory HUD() {
+    _instance ??= HUD._internal();
+    return _instance!;
+  }
 
-    _isLoading = true;
+  HUD._internal();
 
-    final overlay = Overlay.of(Get.context!)!;
+  // 显示 HUD
+  static void show(BuildContext context, {String message = "加载中..."}) {
+    if (_isShowing) return;
+
+    _isShowing = true;
     _overlayEntry = OverlayEntry(
       builder: (context) => Material(
-        color: Colors.black.withOpacity(0.3),
+        type: MaterialType.transparency,
         child: Center(
           child: Container(
-            padding: EdgeInsets.all(16),
+            padding: EdgeInsets.all(20),
             decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(8),
+              color: AppColors.redGradient[100],
+              borderRadius: BorderRadius.circular(10),
             ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                CircularProgressIndicator(),
-                SizedBox(height: 8),
-                Text(message ?? '加载中...'),
+                // 替换为正方形动画
+                Container(
+                  width: 40,
+                  height: 40,
+                  child: SquareLoading(),
+                ),
+                SizedBox(height: 10),
+                Text(
+                  message,
+                  style: TextStyle(color: Colors.white),
+                ),
               ],
             ),
           ),
@@ -68,17 +51,15 @@ class LoadingManager {
       ),
     );
 
-    overlay.insert(_overlayEntry!);
+    Overlay.of(context).insert(_overlayEntry!);
   }
 
-  static void hideFullScreenLoading() {
-    if (!_isLoading || _overlayEntry == null) return;
+  // 隐藏 HUD
+  static void hide() {
+    if (!_isShowing || _overlayEntry == null) return;
 
     _overlayEntry?.remove();
     _overlayEntry = null;
-    _isLoading = false;
+    _isShowing = false;
   }
-
 }
-
-

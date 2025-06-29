@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:kimiflash/http/api/auth_api.dart';
 import 'package:kimiflash/pages/delivery/components/delivery_list_item.dart';
+import 'package:kimiflash/pages/widgets/loading_manager.dart';
 import 'package:loading_overlay/loading_overlay.dart';
 import 'delivery_list_controller.dart';
 
@@ -22,13 +23,13 @@ class _DeliveryListPageState extends State<DeliveryListPage> with SingleTickerPr
   @override
   void initState() {
     super.initState();
-    // 默认加载第一个 tab 的数据
-    _fetchOrders(0);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _fetchOrders(0);
+    });
   }
 
   Future<void> _fetchOrders(int status) async {
-    setState(() => _isLoading = true);
-
+    HUD.show(context);
     try {
       final response = await _authApi.DeliverManQueryDeliveryList({
         "orderStatus": status,
@@ -53,15 +54,9 @@ class _DeliveryListPageState extends State<DeliveryListPage> with SingleTickerPr
     } catch (e) {
       Get.snackbar('网络错误', e.toString());
     } finally {
-      setState(() => _isLoading = false);
+      HUD.hide();
     }
   }
-
-  void _handleTabChange() {
-    final index = controller.tabController.index;
-    _fetchOrders(index); // 根据当前 tab 索引加载数据
-  }
-
 
   @override
   Widget build(BuildContext context) {
@@ -77,20 +72,16 @@ class _DeliveryListPageState extends State<DeliveryListPage> with SingleTickerPr
           ],
         ),
       ),
-      body: LoadingOverlay(
-        isLoading: _isLoading,
-        progressIndicator: CircularProgressIndicator(),
-        child: TabBarView(
-          controller: controller.tabController,
-          children: [
-            // 待派件
-            _buildOrderList(_pendingList),
-            // 已派件
-            _buildOrderList(_completedList),
-            // 派件失败
-            _buildOrderList(_failedList),
-          ],
-        ),
+      body: TabBarView(
+        controller: controller.tabController,
+        children: [
+          // 待派件
+          _buildOrderList(_pendingList),
+          // 已派件
+          _buildOrderList(_completedList),
+          // 派件失败
+          _buildOrderList(_failedList),
+        ],
       ),
     );
   }

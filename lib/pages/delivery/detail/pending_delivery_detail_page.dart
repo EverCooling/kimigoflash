@@ -1,9 +1,11 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_form_builder/flutter_form_builder.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 import 'package:get/get.dart';
 import 'package:get/get_core/src/get_main.dart';
 import 'package:kimiflash/pages/delivery/detail/pending_delivery_detail_controller.dart';
+import 'package:kimiflash/pages/widgets/loading_manager.dart';
 
 import '../../../http/api/auth_api.dart';
 import '../../widgets/custom_dropdown_field.dart';
@@ -30,16 +32,14 @@ class _PendingDeliveryDetailPageState extends State<PendingDeliveryDetail> {
   List<String>? _receiptImageUrls;
   String? _signatureImageUrl;
   final _formKey = GlobalKey<FormBuilderState>();
-  bool _isLoading = false;
 
   @override
   void initState() {
     super.initState();
     deliveryDetails = {}; // 初始化为空对象
-    _fetchOrders(widget.deliveryItem['id']);
-    // WidgetsBinding.instance.addPostFrameCallback((_) {
-    //   _registerFieldValidators();
-    // });
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _fetchOrders(widget.deliveryItem['id']);
+    });
   }
 
   String getSignForTypeName(int signForType) {
@@ -55,58 +55,34 @@ class _PendingDeliveryDetailPageState extends State<PendingDeliveryDetail> {
     }
   }
 
-  String _mapSignForType(String? method) {
-    switch (method) {
-      case '本人签收':
-        return '1';
-      case '家人代签':
-        return '2';
-      case '自提签收':
-        return '3';
-      default:
-        return '';
-    }
-  }
 
   Future<void> _submit() async {
     print('提交按钮点击'); // 调试输出
-    setState(() => _isLoading = true);
-
+    HUD.show(context);
     try {
-      final String signForType = _mapSignForType(controller.selectedMethod);
-      
-      if (signForType.isEmpty) {
-        Get.snackbar('验证失败', '请选择有效的签收方式', snackPosition: SnackPosition.BOTTOM);
-        setState(() => _isLoading = false);
-        return;
-      }
-
       // 调用API提交数据
       final response = await _authApi.DeliveryManAddOrderDelivery({
         'kyInStorageNumber': deliveryDetails['kySmallShipment'] ?? '',
-        'signForType': signForType,
+        'signForType': '',
         'signForImg': _receiptImageUrls?.isNotEmpty == true ? _receiptImageUrls![0] : '',
         'signature': _signatureImageUrl ?? '',
         'customerCode':'10010'
       });
-
-      setState(() => _isLoading = false);
-
       if (response.code == 200) {
         Get.snackbar('成功', '签收成功');
       } else {
         Get.snackbar('失败', response.msg ?? '验证失败');
       }
     } catch (e) {
-      setState(() => _isLoading = false);
       Get.snackbar('错误', e.toString());
+    } finally {
+      HUD.hide();
     }
-
-
   }
 
 
   Future<void> _fetchOrders(int orderId) async {
+    HUD.show(context); // 显示 HUD
     try {
       final response = await _authApi.DeliverManDeliveryDetail({
         "orderId": orderId,
@@ -114,6 +90,7 @@ class _PendingDeliveryDetailPageState extends State<PendingDeliveryDetail> {
       });
 
       if (response.code == 200) {
+
         setState(() {
           deliveryDetails = response.data; // 假设Response类有一个data字段包含详细数据
         });
@@ -123,6 +100,7 @@ class _PendingDeliveryDetailPageState extends State<PendingDeliveryDetail> {
     } catch (e) {
       Get.snackbar('网络错误', e.toString(), snackPosition: SnackPosition.BOTTOM); // 指定snackbar的位置
     } finally {
+      HUD.hide();
     }
   }
 
@@ -195,13 +173,18 @@ class _PendingDeliveryDetailPageState extends State<PendingDeliveryDetail> {
                       labelText: '签收方式',
                       items: controller.methods,
                       initialValue: controller.selectedMethod,
-                      onTap: (context) =>
-                           SignMethodBottomSheet.show(
-                            context,
-                            methods: controller.methods,
-                            initialValue: controller.selectedMethod,
-
-                          ),
+                      onTap: (context) async {
+                        final result = await SignMethodBottomSheet.show(
+                          context,
+                          methods: controller.methods,
+                          initialValue: controller.selectedMethod,
+                        );
+                        if (result != null) {
+                          print('叭叭叭叭叭 ===== ${result['value']}');
+                          return result['value'];
+                        }
+                        return null;
+                      },
                     ),
                     const SizedBox(height: 16),
 

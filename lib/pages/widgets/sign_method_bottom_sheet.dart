@@ -4,18 +4,18 @@ import 'package:flutter/material.dart';
 import 'package:flutter/material.dart';
 
 class SignMethodBottomSheet {
-  static Future<String?> show(
+  static Future<Map<String, dynamic>?> show(
       BuildContext context, {
         required List<String> methods,
         String? initialValue,
-        String? title = '选择签收方式',  // 允许自定义标题
-        TextStyle? titleStyle,  // 标题样式
-        EdgeInsetsGeometry? padding,  // 内边距
-        Color? selectedColor = Colors.red,  // 选中颜色
-        ShapeBorder? shape,  // 底部弹窗形状
-        List<Widget>? additionalActions,  // 底部附加操作
+        String? title = '选择签收方式', // 允许自定义标题
+        TextStyle? titleStyle, // 标题样式
+        EdgeInsetsGeometry? padding, // 内边距
+        Color? selectedColor = Colors.red, // 选中颜色
+        ShapeBorder? shape, // 底部弹窗形状
+        List<Widget>? additionalActions, // 底部附加操作
       }) async {
-    return await showModalBottomSheet<String>(
+    return await showModalBottomSheet<Map<String, dynamic>>(
       context: context,
       shape: shape ?? RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
@@ -36,12 +36,15 @@ class SignMethodBottomSheet {
                 ),
                 SizedBox(height: 16),
               ],
-              ...methods.map((method) => ListTile(
-                title: Text(method),
-                trailing: initialValue == method
+              ...methods.asMap().entries.map((entry) => ListTile(
+                title: Text(entry.value),
+                trailing: initialValue == entry.value
                     ? Icon(Icons.check, color: selectedColor)
                     : null,
-                onTap: () => Navigator.pop(context, method),
+                onTap: () => Navigator.pop(context, {
+                  'value': entry.value,
+                  'index': entry.key,
+                }),
               )),
               if (additionalActions != null) ...[
                 SizedBox(height: 8),

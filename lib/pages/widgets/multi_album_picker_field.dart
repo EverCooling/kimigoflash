@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:kimiflash/pages/widgets/loading_manager.dart';
 import 'package:wechat_assets_picker/wechat_assets_picker.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:http/http.dart' as http;
@@ -52,7 +53,7 @@ class _MultiAlbumPickerFieldState extends State<MultiAlbumPickerField> {
 
       // 上传图片并获取返回路径
       final List<String> uploadedPaths = [];
-
+      HUD.show(context);
       for (var asset in result) {
         final File? file = await asset.file;
         if (file != null) {
@@ -62,8 +63,10 @@ class _MultiAlbumPickerFieldState extends State<MultiAlbumPickerField> {
           if(response.data != null) {
             uploadedPaths.add(response.data!['value']);
           }
+
         }
       }
+      HUD.hide();
 
       setState(() {
         _isUploading = false;
@@ -89,7 +92,9 @@ class _MultiAlbumPickerFieldState extends State<MultiAlbumPickerField> {
 
       // 显示错误提示
       Get.snackbar('图片选择失败', e.toString());
+    } finally {
     }
+
   }
 
   @override

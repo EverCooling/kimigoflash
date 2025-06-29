@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:kimiflash/pages/widgets/loading_manager.dart';
 import 'package:loading_overlay/loading_overlay.dart';
 import '../../http/api/auth_api.dart';
 import '../widgets/custom_text_field.dart';
@@ -14,9 +15,7 @@ class OutboundScanPage extends StatefulWidget {
 }
 
 class _OutboundScanPageState extends State<OutboundScanPage> {
-  bool _isLoading = false;
   final controller = Get.put(OutboundScanController());
-
   final AuthApi _authApi = AuthApi();
 
   Future<void> _verifyOrder(String orderNumber) async {
@@ -25,18 +24,14 @@ class _OutboundScanPageState extends State<OutboundScanPage> {
       Get.snackbar('错误', '单号有误，请重新操作');
       return;
     }
+    HUD.show(context);
 
-    setState(() => _isLoading = true);
     try {
       final response = await _authApi.DeliverManScanOutWarehouse({
         'kyInStorageNumber': orderNumber,
         'customerCode': '10010',
         "lang":"zh"
       });
-      setState(() {
-        _isLoading = false;
-      });
-
       if (response.code == 200) {
         Get.snackbar('成功', '单号验证成功');
         await _deliveryManBatchOutWarehouse(orderNumber);
@@ -46,14 +41,16 @@ class _OutboundScanPageState extends State<OutboundScanPage> {
         Get.snackbar('失败', response.msg ?? '验证失败');
       }
     } catch (e) {
-      setState(() => _isLoading = false);
       Get.snackbar('错误', e.toString());
+    } finally {
+      HUD.hide();
     }
   }
 
 
   Future<void>  _deliveryManBatchOutWarehouse(String orderNumber) async {
     // 新增：调用上传接口
+    HUD.show(context);
     try {
       final uploadResponse = await _authApi.DeliveryManBatchOutWarehouse({
         'kyInStorageNumberList': [orderNumber],
@@ -68,116 +65,115 @@ class _OutboundScanPageState extends State<OutboundScanPage> {
       }
     } catch (e) {
       Get.snackbar('上传异常', e.toString());
+    } finally {
+      HUD.hide();
     }
   }
 
 
   @override
   Widget build(BuildContext context) {
-    return LoadingOverlay(
-        isLoading: _isLoading,
-        progressIndicator: CircularProgressIndicator(),
-        child: Scaffold(
-          appBar: AppBar(title: Text('出仓扫描')),
-          body: Column(
-            children: [
-              // 可滑动的内容区域
-              Expanded(
-                child: SingleChildScrollView(
-                  padding: EdgeInsets.all(16.0),
-                  physics: AlwaysScrollableScrollPhysics(),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+    return Scaffold(
+      appBar: AppBar(title: Text('出仓扫描')),
+      body: Column(
+        children: [
+          // 可滑动的内容区域
+          Expanded(
+            child: SingleChildScrollView(
+              padding: EdgeInsets.all(16.0),
+              physics: AlwaysScrollableScrollPhysics(),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  CustomTextField(
+                    name: 'courier',
+                    labelText: '所属派件员',
+                    controller: controller.courierController,
+                    enabled: false, // 禁用编辑
+                    prefixIcon: Icons.person_outline,
+                    hintText: '',
+                  ),
+                  SizedBox(height: 20),
+                  CustomTextField(
+                    name: 'trackingNumber',
+                    labelText: '扫描单号',
+                    hintText: '请输入运单号',
+                    controller: controller.scanController,
+                    prefixIcon: Icons.vertical_distribute,
+                    suffixIcon: Icons.barcode_reader,
+                    onSuffixPressed: () async {
+                      final barcodeResult = await Get.toNamed('/scanner');
+                      if (barcodeResult != null) {
+                        await _verifyOrder(barcodeResult);
+                      }
+                    },
+                    onSubmitted: (value) async {
+                      if (value != null) await _verifyOrder(value);
+                    },
+                  ),
+                  SizedBox(height: 20),
+                  Text('扫描记录', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                  SizedBox(height: 8),
+                  Row(
                     children: [
-                      CustomTextField(
-                        name: 'courier',
-                        labelText: '所属派件员',
-                        controller: controller.courierController,
-                        enabled: false, // 禁用编辑
-                        prefixIcon: Icons.person_outline,
-                        hintText: '',
-                      ),
-                      SizedBox(height: 20),
-                      CustomTextField(
-                        name: 'trackingNumber',
-                        labelText: '扫描单号',
-                        hintText: '请输入运单号',
-                        controller: controller.scanController,
-                        prefixIcon: Icons.vertical_distribute,
-                        suffixIcon: Icons.barcode_reader,
-                        onSuffixPressed: () async {
-                          final barcodeResult = await Get.toNamed('/scanner');
-                          if (barcodeResult != null) {
-                            await _verifyOrder(barcodeResult);
-                          }
-                        },
-                        onSubmitted: (value) async {
-                          if (value != null) await _verifyOrder(value);
-                        },
-                      ),
-                      SizedBox(height: 20),
-                      Text('扫描记录', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                      SizedBox(height: 8),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: Container(
-                              height: 400,
-                              child: ListView(
-                                shrinkWrap: true,
-                                physics: NeverScrollableScrollPhysics(),
-                                children: [
-                                  Center(child: Text('已扫描 (${controller.scannedList.length})', style: TextStyle(fontWeight: FontWeight.bold))),
-                                  Divider(),
-                                  Obx(() {
-                                    return Column(
-                                      children: controller.scannedList.map((item) => ListTile(title: Text(item),minTileHeight: 10,contentPadding: EdgeInsets.all(0))).toList(),
-                                    );
-                                  }),
-                                ],
-                              ),
-                            ),
+                      Expanded(
+                        child: Container(
+                          height: 400,
+                          child: ListView(
+                            shrinkWrap: true,
+                            physics: NeverScrollableScrollPhysics(),
+                            children: [
+                              Center(child: Text('已扫描 (${controller.scannedList.length})', style: TextStyle(fontWeight: FontWeight.bold))),
+                              Divider(),
+                              Obx(() {
+                                return Column(
+                                  children: controller.scannedList.map((item) => ListTile(title: Text(item),minTileHeight: 10,contentPadding: EdgeInsets.all(0))).toList(),
+                                );
+                              }),
+                            ],
                           ),
-                          SizedBox(width: 16),
-                          Expanded(
-                            child: Container(
-                              height: 400,
-                              child: ListView(
-                                shrinkWrap: true,
-                                physics: NeverScrollableScrollPhysics(),
-                                children: [
-                                  Center(child: Text('已上传 (${controller.uploadedList.length})', style: TextStyle(fontWeight: FontWeight.bold))),
-                                  Divider(),
-                                  Obx(() {
-                                    return Column(
-                                      children: controller.uploadedList.map((item) => ListTile(title: Text(item),minTileHeight: 10,contentPadding: EdgeInsets.all(0),)).toList(),
-                                    );
-                                  }),
-                                ],
-                              ),
-                            ),
+                        ),
+                      ),
+                      SizedBox(width: 16),
+                      Expanded(
+                        child: Container(
+                          height: 400,
+                          child: ListView(
+                            shrinkWrap: true,
+                            physics: NeverScrollableScrollPhysics(),
+                            children: [
+                              Center(child: Text('已上传 (${controller.uploadedList.length})', style: TextStyle(fontWeight: FontWeight.bold))),
+                              Divider(),
+                              Obx(() {
+                                return Column(
+                                  children: controller.uploadedList.map((item) => ListTile(title: Text(item),minTileHeight: 10,contentPadding: EdgeInsets.all(0),)).toList(),
+                                );
+                              }),
+                            ],
                           ),
-                        ],
-                      )
-
+                        ),
+                      ),
                     ],
-                  ),
-                ),
-              ),
+                  )
 
-              // 固定底部按钮
-              Padding(
-                padding: EdgeInsets.all(16.0),
-                child: ElevatedButton(
-                  onPressed: controller.upload,
-                  style: ElevatedButton.styleFrom(
-                    minimumSize: Size(double.infinity, 50),
-                  ),
-                  child: Text('提交'),
-                ),
+                ],
               ),
-            ],
+            ),
           ),
-        ));
+
+          // 固定底部按钮
+          Padding(
+            padding: EdgeInsets.all(16.0),
+            child: ElevatedButton(
+              onPressed: controller.upload,
+              style: ElevatedButton.styleFrom(
+                minimumSize: Size(double.infinity, 50),
+              ),
+              child: Text('提交'),
+            ),
+          ),
+        ],
+    )
+    );
   }
 }
