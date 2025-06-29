@@ -118,7 +118,6 @@ class _ExceptionReportPageState extends State<ExceptionReportPage> {
                   initialValue: null,
                   onTap: (context) async {
                     return await
-                    // 高级使用方式（自定义样式）
                     SignMethodBottomSheet.show(
                       context,
                       methods: controller.reasons,

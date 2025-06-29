@@ -47,22 +47,44 @@ class _PendingDeliveryDetailPageState extends State<PendingDeliveryDetail> {
       case 1:
         return '本人签收';
       case 2:
-        return '自提签收';
+        return '家人代签';
       case 3:
-        return '其他签收';
+        return '自提签收';
       default:
         return '未知签收类型';
+    }
+  }
+
+  String _mapSignForType(String? method) {
+    switch (method) {
+      case '本人签收':
+        return '1';
+      case '家人代签':
+        return '2';
+      case '自提签收':
+        return '3';
+      default:
+        return '';
     }
   }
 
   Future<void> _submit() async {
     print('提交按钮点击'); // 调试输出
     setState(() => _isLoading = true);
+
     try {
+      final String signForType = _mapSignForType(controller.selectedMethod);
+      
+      if (signForType.isEmpty) {
+        Get.snackbar('验证失败', '请选择有效的签收方式', snackPosition: SnackPosition.BOTTOM);
+        setState(() => _isLoading = false);
+        return;
+      }
+
       // 调用API提交数据
       final response = await _authApi.DeliveryManAddOrderDelivery({
-        'kyInStorageNumber': deliveryDetails['kySmallShipment'],
-        'signForType':controller.selectedMethod,
+        'kyInStorageNumber': deliveryDetails['kySmallShipment'] ?? '',
+        'signForType': signForType,
         'signForImg': _receiptImageUrls?.isNotEmpty == true ? _receiptImageUrls![0] : '',
         'signature': _signatureImageUrl ?? '',
         'customerCode':'10010'
@@ -174,10 +196,11 @@ class _PendingDeliveryDetailPageState extends State<PendingDeliveryDetail> {
                       items: controller.methods,
                       initialValue: controller.selectedMethod,
                       onTap: (context) =>
-                          SignMethodBottomSheet.show(
+                           SignMethodBottomSheet.show(
                             context,
                             methods: controller.methods,
                             initialValue: controller.selectedMethod,
+
                           ),
                     ),
                     const SizedBox(height: 16),

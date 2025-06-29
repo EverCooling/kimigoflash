@@ -8,6 +8,7 @@ class CustomDropdownField extends StatelessWidget {
   final List<String> items;
   final Future<String?> Function(BuildContext) onTap;
   final String? initialValue;
+  final ValueChanged<int>? onIndexChanged;
 
   const CustomDropdownField({
     Key? key,
@@ -16,6 +17,7 @@ class CustomDropdownField extends StatelessWidget {
     required this.items,
     required this.onTap,
     this.initialValue,
+    this.onIndexChanged,
   }) : super(key: key);
 
   @override
@@ -28,7 +30,11 @@ class CustomDropdownField extends StatelessWidget {
           onTap: () async {
             final selected = await onTap(context);
             if (selected != null) {
+              final int index = items.indexOf(selected);
               field.didChange(selected);
+              if (onIndexChanged != null && index != -1) {
+                onIndexChanged!(index);
+              }
             }
           },
           child: InputDecorator(
