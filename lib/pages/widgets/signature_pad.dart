@@ -1,6 +1,8 @@
 import 'dart:io';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'package:get/get_core/src/get_main.dart';
 import 'dart:ui' as ui;
 import 'package:syncfusion_flutter_signaturepad/signaturepad.dart';
 import 'package:image_gallery_saver_plus/image_gallery_saver_plus.dart';
@@ -188,8 +190,9 @@ class _SyncfusionSignaturePadWidgetState extends State<SyncfusionSignaturePadWid
         }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('操作出错: $e'))
+        Get.snackbar(
+            '操作出错',
+            '$e'
         );
         setState(() => _isSaving = false);
       }
@@ -207,9 +210,11 @@ class _SyncfusionSignaturePadWidgetState extends State<SyncfusionSignaturePadWid
         final imageUrl = response.data['value'];
         // 上传成功处理
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('签名已成功上传')),
+          Get.snackbar(
+              '签名已成功上传',
+              response.msg,
           );
+
           // 调用上传成功回调
           if (widget.onUploadSuccess != null) {
             widget.onUploadSuccess!(imageUrl);
@@ -220,9 +225,7 @@ class _SyncfusionSignaturePadWidgetState extends State<SyncfusionSignaturePadWid
       return false;
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('上传签名出错: $e')),
-        );
+        Get.snackbar('上传签名出错', '$e');
       }
       return false;
     }

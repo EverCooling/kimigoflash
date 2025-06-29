@@ -90,7 +90,6 @@ class _PendingDeliveryDetailPageState extends State<PendingDeliveryDetail> {
       });
 
       if (response.code == 200) {
-
         setState(() {
           deliveryDetails = response.data; // 假设Response类有一个data字段包含详细数据
         });
