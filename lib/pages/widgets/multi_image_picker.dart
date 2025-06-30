@@ -1,18 +1,26 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:kimiflash/pages/widgets/loading_manager.dart';
 import 'package:wechat_assets_picker/wechat_assets_picker.dart';
 import 'package:wechat_camera_picker/wechat_camera_picker.dart';
+import 'dart:convert';
+
+import '../../http/api/auth_api.dart'; // 导入dart.convert以使用json
 
 class MultiImagePicker extends StatefulWidget {
   final int maxCount;
   final ValueChanged<List<AssetEntity>>? onChanged;
   final List<AssetEntity>? initialValue;
+  final Function(List<String>) onImageUploaded;
 
   const MultiImagePicker({
     Key? key,
     this.maxCount = 9,
     this.onChanged,
     this.initialValue,
+    required this.onImageUploaded,
   }) : super(key: key);
 
   @override
@@ -21,6 +29,7 @@ class MultiImagePicker extends StatefulWidget {
 
 class _MultiImagePickerState extends State<MultiImagePicker> {
   late List<AssetEntity> _selectedAssets;
+  List<String> _uploadedUrls = []; // 存储上传后的图片URL
 
   @override
   void initState() {
@@ -106,6 +115,21 @@ class _MultiImagePickerState extends State<MultiImagePicker> {
             }
           },
         ),
+        // 显示上传按钮和上传状态
+        // if (_selectedAssets.isNotEmpty)
+        //   Padding(
+        //     padding: const EdgeInsets.symmetric(vertical: 16.0),
+        //     child: ElevatedButton(
+        //       onPressed: _uploadSelectedImages,
+        //       child: const Text('上传图片'),
+        //     ),
+        //   ),
+        // // 可选：显示上传后的图片URL
+        // if (_uploadedUrls.isNotEmpty)
+        //   Column(
+        //     crossAxisAlignment: CrossAxisAlignment.start,
+        //     children: _uploadedUrls.map((url) => Text(url)).toList(),
+        //   ),
       ],
     );
   }
@@ -177,7 +201,10 @@ class _MultiImagePickerState extends State<MultiImagePicker> {
         _selectedAssets = result;
       });
       widget.onChanged?.call(_selectedAssets);
+      await _uploadSelectedImages();
     }
+
+
   }
 
   void _removeAsset(int index) {
@@ -185,5 +212,44 @@ class _MultiImagePickerState extends State<MultiImagePicker> {
       _selectedAssets.removeAt(index);
     });
     widget.onChanged?.call(_selectedAssets);
+  }
+
+  // 新增方法：上传选中的图片
+  Future<void> _uploadSelectedImages() async {
+    if (_selectedAssets.isEmpty) return;
+
+    try {
+      final List<String> uploadedUrls = [];
+      HUD.show(context);
+      for (var asset in _selectedAssets) {
+        final File? file = await asset.file;
+        if (file != null) {
+          final response = await AuthApi().uploadFile(file);
+          print("图片上传成功");
+          print(response.data['value']);
+          if(response.data != null) {
+            uploadedUrls.add(response.data!['value']);
+          }
+        }
+      }
+      HUD.hide();
+      setState(() {
+        _uploadedUrls = uploadedUrls;
+      });
+
+      // 回调返回上传后的路径
+      if (_uploadedUrls.isNotEmpty) {
+        print(_uploadedUrls);
+        widget.onImageUploaded(_uploadedUrls);
+      }
+      // 提示用户上传成功
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('图片上传成功')),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('图片上传失败: $e')),
+      );
+    }
   }
 }

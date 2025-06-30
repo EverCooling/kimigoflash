@@ -1,15 +1,12 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_form_builder/flutter_form_builder.dart';
-import 'package:fluttertoast/fluttertoast.dart';
 import 'package:get/get.dart';
-import 'package:get/get_core/src/get_main.dart';
 import 'package:kimiflash/pages/delivery/detail/pending_delivery_detail_controller.dart';
-import 'package:kimiflash/pages/widgets/loading_manager.dart';
-
+import 'dart:convert'; // 确保导入了jsonEncode方法
 import '../../../http/api/auth_api.dart';
 import '../../widgets/custom_dropdown_field.dart';
-import '../../widgets/multi_album_picker_field.dart';
+import '../../widgets/loading_manager.dart';
 import '../../widgets/multi_image_picker.dart';
 import '../../widgets/sign_method_bottom_sheet.dart';
 import '../../widgets/signature_preview.dart';
@@ -17,13 +14,12 @@ import '../../widgets/signature_preview.dart';
 class PendingDeliveryDetail extends StatefulWidget {
   final Map<String, dynamic> deliveryItem;
 
-  const PendingDeliveryDetail({
-    Key? key,
-    required this.deliveryItem
-  }) : super(key: key);
+  const PendingDeliveryDetail({Key? key, required this.deliveryItem})
+    : super(key: key);
 
   @override
-  State<PendingDeliveryDetail> createState() => _PendingDeliveryDetailPageState();
+  State<PendingDeliveryDetail> createState() =>
+      _PendingDeliveryDetailPageState();
 }
 
 class _PendingDeliveryDetailPageState extends State<PendingDeliveryDetail> {
@@ -55,7 +51,7 @@ class _PendingDeliveryDetailPageState extends State<PendingDeliveryDetail> {
         return '未知签收类型';
     }
   }
-  
+
   //本人签收返回1 自提签收返回2 其他签收返回3
   int _getSignMethodValue(String signMethod) {
     switch (signMethod) {
@@ -82,15 +78,11 @@ class _PendingDeliveryDetailPageState extends State<PendingDeliveryDetail> {
         final String kyInStorageNumber = deliveryDetails['kyInStorageNumber'] ?? '';
         final String signMethod = formData['signMethod'] ?? '';
 
-        print("表单${formData}");
-
         // 调用API提交数据
         final response = await _authApi.DeliveryManAddOrderDelivery({
           'kyInStorageNumber': kyInStorageNumber,
           'signForType': _getSignMethodValue(signMethod),
-          'signForImg': _receiptImageUrls?.isNotEmpty == true
-              ? _receiptImageUrls![0]
-              : '',
+          'signForImg': json.encode(_receiptImageUrls), // 使用JSON字符串
           'signature': _signatureImageUrl ?? '',
           'customerCode': '10010'
         });
@@ -113,7 +105,7 @@ class _PendingDeliveryDetailPageState extends State<PendingDeliveryDetail> {
     try {
       final response = await _authApi.DeliverManDeliveryDetail({
         "orderId": orderId,
-        "customerCode": "10010"
+        "customerCode": "10010",
       });
 
       if (response.code == 200) {
@@ -121,16 +113,22 @@ class _PendingDeliveryDetailPageState extends State<PendingDeliveryDetail> {
           deliveryDetails = response.data; // 假设Response类有一个data字段包含详细数据
         });
       } else {
-        Get.snackbar('加载失败', response.msg ?? '未知错误', snackPosition: SnackPosition.BOTTOM); // 指定snackbar的位置
+        Get.snackbar(
+          '加载失败',
+          response.msg ?? '未知错误',
+          snackPosition: SnackPosition.BOTTOM,
+        );
       }
     } catch (e) {
-      Get.snackbar('网络错误', e.toString(), snackPosition: SnackPosition.BOTTOM); // 指定snackbar的位置
+      Get.snackbar(
+        '网络错误',
+        e.toString(),
+        snackPosition: SnackPosition.BOTTOM,
+      );
     } finally {
       HUD.hide();
     }
   }
-
-
 
   @override
   Widget build(BuildContext context) {
@@ -161,14 +159,20 @@ class _PendingDeliveryDetailPageState extends State<PendingDeliveryDetail> {
                       title: '收件人信息',
                       children: [
                         _buildInfoRow(
-                            '姓名', deliveryDetails['recipientName'] ?? '',
-                            Icons.person),
+                          '姓名',
+                          deliveryDetails['recipientName'] ?? '',
+                          Icons.person,
+                        ),
                         _buildInfoRow(
-                            '电话', deliveryDetails['recipietnMobile'] ?? '',
-                            Icons.phone),
+                          '电话',
+                          deliveryDetails['recipietnMobile'] ?? '',
+                          Icons.phone,
+                        ),
                         _buildInfoRow(
-                            '地址', deliveryDetails['recipetenAddressFirst'] ?? '',
-                            Icons.location_on),
+                          '地址',
+                          deliveryDetails['recipetenAddressFirst'] ?? '',
+                          Icons.location_on,
+                        ),
                       ],
                     ),
                     const SizedBox(height: 16),
@@ -227,8 +231,9 @@ class _PendingDeliveryDetailPageState extends State<PendingDeliveryDetail> {
                     // ),
                     MultiImagePicker(
                       maxCount: 6,
-                      onChanged: (assets) {
-                        print('选中的图片: ${assets.length}张');
+                      onImageUploaded: (imagePaths) {
+                        _receiptImageUrls = imagePaths;
+                        print('选中的图片: ${imagePaths}');
                       },
                     ),
                     SizedBox(height: 20),
@@ -253,7 +258,11 @@ class _PendingDeliveryDetailPageState extends State<PendingDeliveryDetail> {
             child: ElevatedButton(
               onPressed: () {
                 if (_formKey.currentState == null) {
-                  Get.snackbar('错误', '表单未正确初始化，请重试', snackPosition: SnackPosition.BOTTOM);
+                  Get.snackbar(
+                    '错误',
+                    '表单未正确初始化，请重试',
+                    snackPosition: SnackPosition.BOTTOM,
+                  );
                   return;
                 }
                 final form = _formKey.currentState;
@@ -262,7 +271,11 @@ class _PendingDeliveryDetailPageState extends State<PendingDeliveryDetail> {
                 } else {
                   print('表单未准备好或验证失败');
                   // 可选：显示提示信息
-                  Get.snackbar('提示', '请检查表单内容是否完整正确', snackPosition: SnackPosition.BOTTOM);
+                  Get.snackbar(
+                    '提示',
+                    '请检查表单内容是否完整正确',
+                    snackPosition: SnackPosition.BOTTOM,
+                  );
                 }
               },
               style: ElevatedButton.styleFrom(
@@ -277,8 +290,12 @@ class _PendingDeliveryDetailPageState extends State<PendingDeliveryDetail> {
   }
 
   // 构建信息卡片
-  Widget _buildInfoCard({required String title, String? content, List<
-      Widget>? children, IconData? icon}) {
+  Widget _buildInfoCard({
+    required String title,
+    String? content,
+    List<Widget>? children,
+    IconData? icon,
+  }) {
     return Card(
       margin: EdgeInsets.zero,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
@@ -295,8 +312,10 @@ class _PendingDeliveryDetailPageState extends State<PendingDeliveryDetail> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(title,
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+            Text(
+              title,
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            ),
             if (content != null) ...[
               const SizedBox(height: 8),
               Row(
@@ -306,14 +325,12 @@ class _PendingDeliveryDetailPageState extends State<PendingDeliveryDetail> {
                     const SizedBox(width: 8),
                   ],
                   Expanded(
-                      child: Text(content, style: TextStyle(fontSize: 16),)),
+                    child: Text(content, style: TextStyle(fontSize: 16)),
+                  ),
                 ],
               ),
             ],
-            if (children != null) ...[
-              const SizedBox(height: 8),
-              ...children,
-            ],
+            if (children != null) ...[const SizedBox(height: 8), ...children],
           ],
         ),
       ),
@@ -330,55 +347,55 @@ class _PendingDeliveryDetailPageState extends State<PendingDeliveryDetail> {
       padding: const EdgeInsets.all(8.0),
       margin: const EdgeInsets.symmetric(vertical: 4.0),
       child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Icon(icon, size: 16, color: Colors.red),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(label,
-                      style: TextStyle(color: Colors.grey, fontSize: 16)),
-                  // const SizedBox(height: 2),
-                  Text(value, style: TextStyle(fontSize: 16)),
-                ],
-              ),
-            )
-          ]),
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, size: 16, color: Colors.red),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(label, style: TextStyle(color: Colors.grey, fontSize: 16)),
+                // const SizedBox(height: 2),
+                Text(value, style: TextStyle(fontSize: 16)),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 
-// 构建品类区域
-//   Widget _buildCategorySection(String title, List<dynamic> items) {
-//     return _buildInfoCard(
-//       title: title,
-//       children: [
-//         const SizedBox(height: 8),
-//         Padding(
-//           padding: const EdgeInsets.symmetric(horizontal: 16.0),
-//           child: Column(
-//             crossAxisAlignment: CrossAxisAlignment.start,
-//             children: items
-//                 .map((item) => _buildCategoryItem(item.toString()))
-//                 .toList(),
-//           ),
-//         ),
-//       ],
-//     );
-//   }
+  // 构建品类区域
+  //   Widget _buildCategorySection(String title, List<dynamic> items) {
+  //     return _buildInfoCard(
+  //       title: title,
+  //       children: [
+  //         const SizedBox(height: 8),
+  //         Padding(
+  //           padding: const EdgeInsets.symmetric(horizontal: 16.0),
+  //           child: Column(
+  //             crossAxisAlignment: CrossAxisAlignment.start,
+  //             children: items
+  //                 .map((item) => _buildCategoryItem(item.toString()))
+  //                 .toList(),
+  //           ),
+  //         ),
+  //       ],
+  //     );
+  //   }
 
-// 构建单个品类项
-//   Widget _buildCategoryItem(String itemName) {
-//     return Padding(
-//       padding: const EdgeInsets.symmetric(vertical: 4.0),
-//       child: Row(
-//         children: [
-//           Icon(Icons.circle, size: 8, color: Colors.grey),
-//           const SizedBox(width: 8),
-//           Text(itemName),
-//         ],
-//       ),
-//     );
-//   }
+  // 构建单个品类项
+  //   Widget _buildCategoryItem(String itemName) {
+  //     return Padding(
+  //       padding: const EdgeInsets.symmetric(vertical: 4.0),
+  //       child: Row(
+  //         children: [
+  //           Icon(Icons.circle, size: 8, color: Colors.grey),
+  //           const SizedBox(width: 8),
+  //           Text(itemName),
+  //         ],
+  //       ),
+  //     );
+  //   }
 }

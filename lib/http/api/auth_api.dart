@@ -47,24 +47,6 @@ class AuthApi {
     }
   }
 
-  //签收提交接口
-  Future<ApiResponse> DeliverSignFor(Map<String,dynamic> queryParameters) async{
-    try {
-      final response = await _client.post(
-        '/api/DeliveryMan/DeliverSignFor',
-        data: queryParameters,
-      );
-
-      // 使用ApiResponse.parse方法解析响应
-      return ApiResponse.parse(response.data);
-    } catch (e) {
-      return ApiResponse.failure(
-        msg: '验证出错: ${e.toString()}',
-        code: 500,
-      );
-    }
-  }
-
   //出仓扫描批量提交
   Future<ApiResponse> DeliveryManBatchOutWarehouse(Map<String,dynamic> queryParameters) async{
     try {
