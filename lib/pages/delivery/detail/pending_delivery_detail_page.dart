@@ -59,24 +59,37 @@ class _PendingDeliveryDetailPageState extends State<PendingDeliveryDetail> {
   Future<void> _submit() async {
     print('提交按钮点击'); // 调试输出
     HUD.show(context);
-    try {
-      // 调用API提交数据
-      final response = await _authApi.DeliveryManAddOrderDelivery({
-        'kyInStorageNumber': deliveryDetails['kySmallShipment'] ?? '',
-        'signForType': '',
-        'signForImg': _receiptImageUrls?.isNotEmpty == true ? _receiptImageUrls![0] : '',
-        'signature': _signatureImageUrl ?? '',
-        'customerCode':'10010'
-      });
-      if (response.code == 200) {
-        Get.snackbar('成功', '签收成功');
-      } else {
-        Get.snackbar('失败', response.msg ?? '验证失败');
+
+    final form = _formKey.currentState;
+    if (form?.saveAndValidate() ?? false) {
+      try {
+        // 获取表单值
+        final Map<String, dynamic> formData = form!.value;
+        final String kySmallShipment = formData['kySmallShipment'] ?? '';
+        final String signMethod = formData['signMethod'] ?? '';
+
+        print("表单${formData}");
+
+        // 调用API提交数据
+        final response = await _authApi.DeliveryManAddOrderDelivery({
+          'kyInStorageNumber': kySmallShipment,
+          'signForType': signMethod,
+          'signForImg': _receiptImageUrls?.isNotEmpty == true
+              ? _receiptImageUrls![0]
+              : '',
+          'signature': _signatureImageUrl ?? '',
+          'customerCode': '10010'
+        });
+        if (response.code == 200) {
+          Get.snackbar('成功', '签收成功');
+        } else {
+          Get.snackbar('失败', response.msg ?? '验证失败');
+        }
+      } catch (e) {
+        Get.snackbar('错误', e.toString());
+      } finally {
+        HUD.hide();
       }
-    } catch (e) {
-      Get.snackbar('错误', e.toString());
-    } finally {
-      HUD.hide();
     }
   }
 
@@ -108,8 +121,6 @@ class _PendingDeliveryDetailPageState extends State<PendingDeliveryDetail> {
   @override
   Widget build(BuildContext context) {
     final controller = Get.find<PendingDeliveryDetailController>();
-    final _formKey = GlobalKey<FormBuilderState>();
-
     return Scaffold(
       appBar: AppBar(title: const Text('派送详情')),
       body: Column(
@@ -119,7 +130,7 @@ class _PendingDeliveryDetailPageState extends State<PendingDeliveryDetail> {
             child: SingleChildScrollView(
               padding: const EdgeInsets.all(16.0),
               child: FormBuilder(
-                key: _formKey,
+                key: _formKey, // 确保_formKey正确绑定
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -221,6 +232,10 @@ class _PendingDeliveryDetailPageState extends State<PendingDeliveryDetail> {
             padding: const EdgeInsets.all(16.0),
             child: ElevatedButton(
               onPressed: () {
+                if (_formKey.currentState == null) {
+                  Get.snackbar('错误', '表单未正确初始化，请重试', snackPosition: SnackPosition.BOTTOM);
+                  return;
+                }
                 final form = _formKey.currentState;
                 if (form != null && form.saveAndValidate()) {
                   _submit();

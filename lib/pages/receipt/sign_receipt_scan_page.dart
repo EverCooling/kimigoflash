@@ -69,13 +69,13 @@ class _SignReceiptScanPageState extends State<SignReceiptScanPage> {
       try {
         // 获取表单值
         final Map<String, dynamic> formData = form!.value;
-        final String trackingNumber = formData['trackingNumber'] ?? '';
+        final String kySmallShipment = formData['kySmallShipment'] ?? '';
         final String signMethod = formData['signMethod'] ?? '';
 
         HUD.show(context);
         // 调用API提交数据
         final response = await _authApi.DeliveryManAddOrderDelivery({
-          'kyInStorageNumber': trackingNumber,
+          'kyInStorageNumber': "UKG$kySmallShipment",
           'signForType': signMethod,
           'signForImg': _receiptImageUrls?.isNotEmpty == true ? _receiptImageUrls![0] : '',
           'signature': _signatureImageUrl ?? '',
