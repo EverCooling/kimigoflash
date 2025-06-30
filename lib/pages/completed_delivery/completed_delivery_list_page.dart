@@ -1,10 +1,21 @@
 // lib/pages/completed_delivery/completed_delivery_list_page.dart
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import '../../http/api/auth_api.dart';
+import '../widgets/loading_manager.dart';
 import 'completed_delivery_list_controller.dart';
+class CompletedDeliveryListPage extends StatefulWidget {
 
-class CompletedDeliveryListPage extends GetView<CompletedDeliveryListController> {
-  const CompletedDeliveryListPage({Key? key}) : super(key: key);
+  const CompletedDeliveryListPage({Key? key})
+      : super(key: key);
+
+  @override
+  State<CompletedDeliveryListPage> createState() =>
+      _CompletedDeliveryListPageState();
+}
+
+class _CompletedDeliveryListPageState extends State<CompletedDeliveryListPage> {
+  final controller = Get.put(CompletedDeliveryListController());
 
   @override
   Widget build(BuildContext context) {

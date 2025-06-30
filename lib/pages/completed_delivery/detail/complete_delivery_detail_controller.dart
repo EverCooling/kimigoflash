@@ -2,7 +2,7 @@
 import 'package:get/get.dart';
 
 class CompleteDeliveryDetailController extends GetxController {
-  final Map<String, dynamic> deliveryItem;
-
-  CompleteDeliveryDetailController({required this.deliveryItem});
+  // final Map<String, dynamic> deliveryItem;
+  //
+  // CompleteDeliveryDetailController({required this.deliveryItem});
 }

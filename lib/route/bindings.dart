@@ -38,8 +38,8 @@ class CompleteDeliveryDetailBinding extends Bindings {
   void dependencies() {
     Get.lazyPut(() {
       // 从 Get.arguments 获取传入的参数，并传给控制器
-      final deliveryItem = Get.arguments as Map<String, dynamic>;
-      return CompleteDeliveryDetailController(deliveryItem: deliveryItem);
+      // final deliveryItem = Get.arguments as Map<String, dynamic>;
+      return CompleteDeliveryDetailController();
     });
   }
 }
