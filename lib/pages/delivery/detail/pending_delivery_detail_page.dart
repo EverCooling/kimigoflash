@@ -65,14 +65,14 @@ class _PendingDeliveryDetailPageState extends State<PendingDeliveryDetail> {
       try {
         // 获取表单值
         final Map<String, dynamic> formData = form!.value;
-        final String kySmallShipment = formData['kySmallShipment'] ?? '';
+        final String kySmallShipment = deliveryDetails['kySmallShipment'] ?? '';
         final String signMethod = formData['signMethod'] ?? '';
 
         print("表单${formData}");
 
         // 调用API提交数据
         final response = await _authApi.DeliveryManAddOrderDelivery({
-          'kyInStorageNumber': kySmallShipment,
+          'kyInStorageNumber': "UKG${kySmallShipment}",
           'signForType': signMethod,
           'signForImg': _receiptImageUrls?.isNotEmpty == true
               ? _receiptImageUrls![0]
