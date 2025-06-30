@@ -54,7 +54,20 @@ class _PendingDeliveryDetailPageState extends State<PendingDeliveryDetail> {
         return '未知签收类型';
     }
   }
-
+  
+  //本人签收返回1 自提签收返回2 其他签收返回3
+  int _getSignMethodValue(String signMethod) {
+    switch (signMethod) {
+      case '本人签收':
+        return 1;
+      case '自提签收':
+        return 2;
+      case '其他签收':
+        return 3;
+      default:
+        return 0;
+    }
+  }
 
   Future<void> _submit() async {
     print('提交按钮点击'); // 调试输出
@@ -65,15 +78,15 @@ class _PendingDeliveryDetailPageState extends State<PendingDeliveryDetail> {
       try {
         // 获取表单值
         final Map<String, dynamic> formData = form!.value;
-        final String kySmallShipment = deliveryDetails['kySmallShipment'] ?? '';
+        final String kyInStorageNumber = deliveryDetails['kyInStorageNumber'] ?? '';
         final String signMethod = formData['signMethod'] ?? '';
 
         print("表单${formData}");
 
         // 调用API提交数据
         final response = await _authApi.DeliveryManAddOrderDelivery({
-          'kyInStorageNumber': "UKG${kySmallShipment}",
-          'signForType': signMethod,
+          'kyInStorageNumber': kyInStorageNumber,
+          'signForType': _getSignMethodValue(signMethod),
           'signForImg': _receiptImageUrls?.isNotEmpty == true
               ? _receiptImageUrls![0]
               : '',
@@ -137,7 +150,7 @@ class _PendingDeliveryDetailPageState extends State<PendingDeliveryDetail> {
                     // 1. 单号展示(独占一栏)
                     _buildInfoCard(
                       title: '运单号',
-                      content: deliveryDetails['kySmallShipment'] ?? '',
+                      content: deliveryDetails['kyInStorageNumber'] ?? '',
                       icon: Icons.confirmation_number,
                     ),
                     const SizedBox(height: 16),

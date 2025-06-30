@@ -20,7 +20,7 @@ class DeliveryListItem extends StatelessWidget {
           // leading: Icon(Icons.assignment_outlined), // 单号图标
           minVerticalPadding: 16,
           contentPadding: const EdgeInsets.symmetric(horizontal: 16),
-          title: Text('单号：${item['kySmallShipment'] ?? ''}'),
+          title: Text('单号：${item['kyInStorageNumber'] ?? ''}'),
           subtitle: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [

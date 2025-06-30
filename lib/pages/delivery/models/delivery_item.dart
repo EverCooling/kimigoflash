@@ -4,7 +4,7 @@ class DeliveryItem {
 
   DeliveryItem(this.data);
 
-  String get kySmallShipment => data['kySmallShipment'] ?? '';
+  String get kyInStorageNumber => data['kyInStorageNumber'] ?? '';
   String get recipientName => data['recipientName'] ?? '';
   String get recipetenAddressFirst => data['recipetenAddressFirst'] ?? '';
   String get recipetenAddressSecond => data['recipetenAddressSecond'] ?? '';

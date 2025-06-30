@@ -61,6 +61,20 @@ class _SignReceiptScanPageState extends State<SignReceiptScanPage> {
     }
   }
 
+  //本人签收返回1 自提签收返回2 其他签收返回3
+  int _getSignMethodValue(String signMethod) {
+    switch (signMethod) {
+      case '本人签收':
+        return 1;
+      case '自提签收':
+        return 2;
+      case '其他签收':
+        return 3;
+      default:
+        return 0;
+    }
+  }
+
   Future<void> _submit() async {
     print('提交按钮点击'); // 调试输出
 
@@ -69,14 +83,14 @@ class _SignReceiptScanPageState extends State<SignReceiptScanPage> {
       try {
         // 获取表单值
         final Map<String, dynamic> formData = form!.value;
-        final String kySmallShipment = formData['kySmallShipment'] ?? '';
+        final String kyInStorageNumber = formData['kyInStorageNumber'] ?? '';
         final String signMethod = formData['signMethod'] ?? '';
 
         HUD.show(context);
         // 调用API提交数据
         final response = await _authApi.DeliveryManAddOrderDelivery({
-          'kyInStorageNumber': "UKG$kySmallShipment",
-          'signForType': signMethod,
+          'kyInStorageNumber': kyInStorageNumber,
+          'signForType': _getSignMethodValue(signMethod),
           'signForImg': _receiptImageUrls?.isNotEmpty == true ? _receiptImageUrls![0] : '',
           'signature': _signatureImageUrl ?? '',
           'customerCode':'10010'
@@ -120,6 +134,7 @@ class _SignReceiptScanPageState extends State<SignReceiptScanPage> {
                       labelText: '扫描单号',
                       hintText: '请输入运单号',
                       prefixIcon: Icons.vertical_distribute,
+                      suffixIcon: Icons.barcode_reader,
                       onSuffixPressed: () async {
                         final barcodeResult = await Get.toNamed('/scanner');
                         if (barcodeResult != null) {
