@@ -1,10 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:kimiflash/pages/widgets/loading_manager.dart';
 import 'package:wechat_assets_picker/wechat_assets_picker.dart';
-import 'package:image_picker/image_picker.dart';
-import 'package:http/http.dart' as http;
 import 'dart:io';
-import 'package:path/path.dart' as path;
 import 'package:get/get.dart';
 
 import '../../http/api/auth_api.dart';
@@ -15,24 +12,22 @@ class MultiAlbumPickerField extends StatefulWidget {
   final Function(List<String>) onImageUploaded;
 
   const MultiAlbumPickerField({
-    Key? key,
+    super.key,
     required this.label,
     this.maxSelection = 5,
     required this.onImageUploaded,
-  }) : super(key: key);
+  });
 
   @override
   State<MultiAlbumPickerField> createState() => _MultiAlbumPickerFieldState();
 }
 class _MultiAlbumPickerFieldState extends State<MultiAlbumPickerField> {
   List<AssetEntity> _selectedAssets = [];
-  bool _isUploading = false;
   List<String> _uploadedPaths = []; // 存储上传成功的图片路径
-
 
   Future<void> _pickAndUploadImages() async {
     // 添加上下文检查
-    if (context == null || !mounted) return;
+    if (!mounted) return;
 
     try {
       final List<AssetEntity>? result = await AssetPicker.pickAssets(
@@ -47,7 +42,6 @@ class _MultiAlbumPickerFieldState extends State<MultiAlbumPickerField> {
       if (result == null || result.isEmpty) return;
 
       setState(() {
-        _isUploading = true;
         _selectedAssets = result;
       });
 
@@ -69,7 +63,6 @@ class _MultiAlbumPickerFieldState extends State<MultiAlbumPickerField> {
       HUD.hide();
 
       setState(() {
-        _isUploading = false;
         _uploadedPaths = uploadedPaths; // 更新已上传图片路径
       });
 
@@ -86,13 +79,13 @@ class _MultiAlbumPickerFieldState extends State<MultiAlbumPickerField> {
       // 防止在组件已销毁后调用setState
       if (mounted) {
         setState(() {
-          _isUploading = false;
         });
       }
 
       // 显示错误提示
       Get.snackbar('图片选择失败', e.toString());
     } finally {
+
     }
 
   }
@@ -142,7 +135,7 @@ class _MultiAlbumPickerFieldState extends State<MultiAlbumPickerField> {
                   )
                 ],
               );
-            }).toList(),
+            }),
 
             // 添加按钮
             if (_uploadedPaths.length < widget.maxSelection)

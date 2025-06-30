@@ -65,6 +65,7 @@ dependencies:
   connectivity_plus: ^5.0.2 # 网络连接状态检测
   flutter_spinkit: ^5.2.1
   url_launcher: ^6.3.1
+  wechat_camera_picker: ^4.3.7
 
 dev_dependencies:
   flutter_test:

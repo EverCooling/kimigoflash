@@ -10,6 +10,7 @@ import 'package:kimiflash/pages/widgets/loading_manager.dart';
 import '../../../http/api/auth_api.dart';
 import '../../widgets/custom_dropdown_field.dart';
 import '../../widgets/multi_album_picker_field.dart';
+import '../../widgets/multi_image_picker.dart';
 import '../../widgets/sign_method_bottom_sheet.dart';
 import '../../widgets/signature_preview.dart';
 
@@ -215,13 +216,19 @@ class _PendingDeliveryDetailPageState extends State<PendingDeliveryDetail> {
                     // 图片上传区域
                     SizedBox(height: 8),
                     // 在页面中使用 MultiAlbumPickerField
-                    MultiAlbumPickerField(
-                      label: '上传签收图片',
-                      maxSelection: 5,
-                      onImageUploaded: (imagePaths) {
-                        _receiptImageUrls = imagePaths;
-                        // 处理上传后的图片路径列表
-                        print('上传成功：$imagePaths');
+                    // MultiAlbumPickerField(
+                    //   label: '上传签收图片',
+                    //   maxSelection: 5,
+                    //   onImageUploaded: (imagePaths) {
+                    //     _receiptImageUrls = imagePaths;
+                    //     // 处理上传后的图片路径列表
+                    //     print('上传成功：$imagePaths');
+                    //   },
+                    // ),
+                    MultiImagePicker(
+                      maxCount: 6,
+                      onChanged: (assets) {
+                        print('选中的图片: ${assets.length}张');
                       },
                     ),
                     SizedBox(height: 20),
