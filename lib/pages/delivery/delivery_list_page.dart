@@ -15,7 +15,7 @@ class _DeliveryListPageState extends State<DeliveryListPage> with SingleTickerPr
 
   final AuthApi _authApi = AuthApi();
   final controller = Get.put(DeliveryListController());
-  bool _isLoading = false;
+  bool _isRequesting = false;
   List<dynamic> _pendingList = [];   // 待派件
   List<dynamic> _completedList = []; // 已派件
   List<dynamic> _failedList = [];    // 派件失败
@@ -23,12 +23,38 @@ class _DeliveryListPageState extends State<DeliveryListPage> with SingleTickerPr
   @override
   void initState() {
     super.initState();
+    controller.tabController.addListener(_handleChange);
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _fetchOrders(0);
+      _fetchOrders(22);
     });
   }
 
+  _handleChange() {
+    if (controller.tabController.indexIsChanging) {
+      _fetchOrders(_getStatus(controller.tabController.index));
+    }
+  }
+  
+  //index ==0 返回22，index === 1返回24，index==2 返回23
+  int _getStatus(int index) {
+    switch (index) {
+      case 0:
+        return 22;
+      case 1:
+        return 23;
+      case 2:
+        return 24;
+      default:
+        return 22;
+    }
+  }
+
   Future<void> _fetchOrders(int status) async {
+    print("_fetchOrders--------------------------------");
+    if(_isRequesting){
+      return;
+    }
+    _isRequesting = true;
     HUD.show(context);
     try {
       final response = await _authApi.DeliverManQueryDeliveryList({
@@ -38,13 +64,13 @@ class _DeliveryListPageState extends State<DeliveryListPage> with SingleTickerPr
 
       if (response.code == 200) {
         switch (status) {
-          case 0:
+          case 22:
             setState(() => _pendingList = response.data ?? []);
             break;
-          case 1:
+          case 23:
             setState(() => _completedList = response.data ?? []);
             break;
-          case 2:
+          case 24:
             setState(() => _failedList = response.data ?? []);
             break;
         }
@@ -55,6 +81,7 @@ class _DeliveryListPageState extends State<DeliveryListPage> with SingleTickerPr
       Get.snackbar('网络错误', e.toString());
     } finally {
       HUD.hide();
+      _isRequesting = false;
     }
   }
 
