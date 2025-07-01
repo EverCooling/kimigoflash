@@ -103,18 +103,19 @@ class _DeliveryListPageState extends State<DeliveryListPage> with SingleTickerPr
         controller: controller.tabController,
         children: [
           // 待派件
-          _buildOrderListWithTabType(_pendingList, 'pending'),
+          _buildOrderList(_pendingList ?? [], 'pending'),
           // 已派件
-          _buildOrderListWithTabType(_completedList, 'completed'),
+          _buildOrderList(_completedList ?? [], 'completed'),
           // 派件失败
-          _buildOrderListWithTabType(_failedList, 'failed'),
+          _buildOrderList(_failedList ?? [], 'failed'),
         ],
       ),
     );
   }
 
-  Widget _buildOrderListWithTabType(List<dynamic> orders, String type) {
-    if (orders.isEmpty) {
+
+  Widget _buildOrderList(List<dynamic>? orders, String type) {
+    if (orders == null || orders.isEmpty) {
       return Center(child: Text('暂无数据'));
     }
 
