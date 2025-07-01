@@ -225,23 +225,24 @@ class AuthApi {
     }
   }
 
-  // //查询派送详情
-  // Future<ApiResponse> DeliverManDeliveryDetail(Map<String,dynamic> queryParameters) async{
-  //   try {
-  //     final response = await _client.post(
-  //         '/delivery-man/delivery-man-delivery-detail',
-  //         data: queryParameters
-  //     );
-  //
-  //     // 使用ApiResponse.parse方法解析响应xx
-  //     return ApiResponse.parse(response.data);
-  //   } catch (e) {
-  //     return ApiResponse.failure(
-  //       msg: '验证出错: ${e.toString()}',
-  //       code: 500,
-  //     );
-  //   }
-  // }
+  //查询派送列表
+  Future<ApiResponse> AddDeliveryManAbnormalRegister(Map<String,dynamic> queryParameters) async{
+    try {
+      final response = await _client.post(
+          '/delivery-man/add-delivery-man-abnormal-register',
+          data: queryParameters
+      );
+
+      // 使用ApiResponse.parse方法解析响应
+      return ApiResponse.parse(response.data);
+    } catch (e) {
+      return ApiResponse.failure(
+        msg: '验证出错: ${e.toString()}',
+        code: 500,
+      );
+    }
+  }
+
 
 
 
