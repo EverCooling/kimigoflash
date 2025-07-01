@@ -107,10 +107,13 @@ class _CompleteDeliveryDetailPageState extends State<CompleteDeliveryDetailPage>
                         ),
                         const SizedBox(height: 16),
 
-                        // 5. 所属品类2
-                        _buildCategoryRow(
-                            '品类',
-                            deliveryDetails?.deliveryCustomerOrderDetailViewList),
+                        _buildInfoCard(title: '品类', children: [
+                          _buildCategoryRow(
+                            '品类1',
+                            deliveryDetails?.deliveryCustomerOrderDetailViewList,
+                          ),
+                        ]),
+                        const SizedBox(height: 16),
 
                         // 3. 总件数
                         _buildInfoCard(
@@ -131,9 +134,15 @@ class _CompleteDeliveryDetailPageState extends State<CompleteDeliveryDetailPage>
                         SizedBox(height: 16),
                         _buildImageGrid(
                             deliveryDetails?.signForImageUrls ?? []),
+
                         // 8. 客户签字板
                         const SizedBox(height: 32),
-                        _buildSignatureImage(deliveryDetails?.signature),
+                        _buildInfoCard(
+                          title: '客户签字',
+                          children: [
+                            _buildSignatureImage(deliveryDetails?.signature),
+                          ]
+                        ),
                       ],
                     ),
                   ),
@@ -142,24 +151,57 @@ class _CompleteDeliveryDetailPageState extends State<CompleteDeliveryDetailPage>
             ),
     );
   }
-  Widget _buildDetailRow(String label, dynamic value) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
+
+  Widget _buildDetailRow({required String label, required String value, required IconData icon, String quantity = ''}) {
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(4.0),
+      ),
+      padding: const EdgeInsets.all(8.0),
+      margin: const EdgeInsets.symmetric(vertical: 4.0),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(label, style: const TextStyle(fontWeight: FontWeight.bold)),
-          Text(value?.toString() ?? '无'),
+          Icon(icon, size: 16, color: Colors.red),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(label, style: TextStyle(color: Colors.grey, fontSize: 16)),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(value, style: TextStyle(fontSize: 16)),
+                    if (quantity.isNotEmpty) Text('数量：$quantity}'),
+                  ],
+                ),
+              ],
+            ),
+          ),
         ],
       ),
     );
   }
 
   Widget _buildCategoryRow(String label, List<OrderItem>? items) {
-    final String displayText = (items ?? []).isNotEmpty
-        ? items!.map((e) => e.toString()).join('、')
-        : '无';
-    return _buildDetailRow(label, displayText);
+    if (items == null || items.isEmpty) {
+      return _buildDetailRow(label: label, value: '无', icon: Icons.category);
+    }
+
+    final List<Widget> categoryWidgets = items.map((item) {
+      return _buildDetailRow(
+        label: label,
+        value: item.brandEnglishName,
+        icon: Icons.category,
+        quantity: item.pcs.toString(),
+      );
+    }).toList();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: categoryWidgets,
+    );
   }
 
   Widget _buildImageGrid(List<String> imageList) {
