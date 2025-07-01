@@ -24,13 +24,13 @@ class DeliveryListController extends GetxController  with GetTickerProviderState
     // 根据类型导航到不同的详情页
     switch (type) {
       case 'pending':
-        Get.toNamed('/pending-delivery-detail', arguments: order);
+        Get.toNamed('/pending-delivery-detail', arguments: {'order': order, 'type': type});
         break;
       case 'completed':
-        Get.toNamed('/complete-delivery-detail', arguments: order);
+        Get.toNamed('/complete-delivery-detail', arguments: {'order': order, 'type': type});
         break;
       case 'failed':
-        Get.toNamed('/delivery/failed_detail', arguments: order);
+        Get.toNamed('/delivery/failed_detail', arguments: {'order': order, 'type': type});
         break;
       default:
         Get.snackbar('错误', '未知的订单类型');

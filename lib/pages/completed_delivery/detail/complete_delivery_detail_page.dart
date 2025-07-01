@@ -105,6 +105,8 @@ class _CompleteDeliveryDetailPageState extends State<CompleteDeliveryDetailPage>
                     ],
                   ),
                   const SizedBox(height: 16),
+                  
+                  _buildCategoryRow('', items)
 
                   // 3. 总件数
                   _buildInfoCard(
@@ -117,18 +119,17 @@ class _CompleteDeliveryDetailPageState extends State<CompleteDeliveryDetailPage>
                   // 6. 签收方式
                   _buildInfoCard(
                     title: '签收方式',
-                    content: deliveryDetails['signMethod'] ?? '',
+                    content: deliveryDetails['signForType'] ?? '',
                     icon: Icons.confirmation_number,
                   ),
 
                   SizedBox(height: 16),
-                  _buildImageGrid(deliveryDetails['imagesUrl']),
+                  _buildImageGrid(deliveryDetails['signForImg']),
                   // 8. 客户签字板
                   const SizedBox(height: 32),
-                  _buildSignatureImage(deliveryDetails['singatureUrl']),
+                  _buildSignatureImage(deliveryDetails['signature']),
                 ],
               ),
-
             ),
           ),
         ],
