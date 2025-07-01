@@ -105,8 +105,13 @@ class _CompleteDeliveryDetailPageState extends State<CompleteDeliveryDetailPage>
                     ],
                   ),
                   const SizedBox(height: 16),
-                  
-                  _buildCategoryRow('', items)
+
+                  // 5. 所属品类2
+                  _buildCategoryRow(
+                      '品类',
+                      deliveryDetails['deliveryCustomerOrderDetailViewList'] ?? []
+                  ),
+
 
                   // 3. 总件数
                   _buildInfoCard(
