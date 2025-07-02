@@ -16,8 +16,8 @@ class ApiService {
     // 初始化 Dio 实例
     BaseOptions options = BaseOptions(
       baseUrl: _baseUrl,
-      connectTimeout: const Duration(seconds: 15),
-      receiveTimeout: const Duration(seconds: 15),
+      connectTimeout: const Duration(seconds: 150),
+      receiveTimeout: const Duration(seconds: 150),
       contentType: Headers.jsonContentType,
     );
 

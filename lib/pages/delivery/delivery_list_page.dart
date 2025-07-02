@@ -28,6 +28,9 @@ class _DeliveryListPageState extends State<DeliveryListPage> with SingleTickerPr
   void initState() {
     super.initState();
     controller.tabController.addListener(_handleChange);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _fetchOrders(_getStatus(controller.tabController.index));
+    });
   }
 
   @override
