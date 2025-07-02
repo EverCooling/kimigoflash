@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-/// 图片预览组件 - 支持单图和多图预览
+/// 图片预览组件 - 支持单图和多图预览，点击任意位置关闭预览
 class ImagePreviewWidget extends StatelessWidget {
   final List<String> imageUrls;       // 图片URL列表
   final int initialIndex;             // 初始显示的图片索引
@@ -20,7 +20,10 @@ class ImagePreviewWidget extends StatelessWidget {
     return Scaffold(
       backgroundColor: Colors.black,
       appBar: showAppBar ? _buildAppBar() : null,
-      body: _buildPreviewBody(),
+      body: GestureDetector(
+        onTap: () => Navigator.pop(context), // 点击任意位置关闭预览
+        child: _buildPreviewBody(),
+      ),
     );
   }
 
@@ -86,7 +89,7 @@ class ImagePreviewWidget extends StatelessWidget {
 }
 
 /// 显示单张图片预览
-void showSingleImagePreview(BuildContext context,String imageUrl, {String? title}) {
+void showSingleImagePreview(BuildContext context, String imageUrl, {String? title}) {
   Navigator.push(
     context,
     MaterialPageRoute(
@@ -114,5 +117,6 @@ void showMultipleImagePreview(
         title: title ?? '图片预览',
       ),
     ),
-  );
+  )
+      .then((value) => debugPrint('预览界面已关闭')); // 可选：预览关闭后的回调
 }
