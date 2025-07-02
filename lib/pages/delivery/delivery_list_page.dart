@@ -21,18 +21,13 @@ class _DeliveryListPageState extends State<DeliveryListPage> with SingleTickerPr
   List<dynamic> _failedList = [];    // 派件失败
   bool _tabIsSelected = false;
   String _searchText = '';
-  DateTime? _startDate;
-  DateTime? _endDate;
-  String? _deliveryMethod; // 派送方式
+  String? _deliveryDays =  ''; // 派送方式
   final TextEditingController _searchController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
     controller.tabController.addListener(_handleChange);
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _fetchOrders(_getStatus(controller.tabController.index));
-    });
   }
 
   @override
@@ -47,7 +42,7 @@ class _DeliveryListPageState extends State<DeliveryListPage> with SingleTickerPr
 
     if (controller.tabController.indexIsChanging) {
       _clearFilters(); // 切换标签时重置筛选条件
-      _fetchOrders(_getStatus(controller.tabController.index));
+      Future.microtask(() => _fetchOrders(_getStatus(controller.tabController.index)));
     }
   }
 
@@ -57,9 +52,9 @@ class _DeliveryListPageState extends State<DeliveryListPage> with SingleTickerPr
       case 0:
         return 22; // 待派件
       case 1:
-        return 24; // 已派件
+        return 23; // 已派件
       case 2:
-        return 23; // 派件失败
+        return 24; // 派件失败
       default:
         return 22;
     }
@@ -70,42 +65,13 @@ class _DeliveryListPageState extends State<DeliveryListPage> with SingleTickerPr
     setState(() {
       _searchText = '';
       _searchController.text = '';
-      _startDate = null;
-      _endDate = null;
-      _deliveryMethod = null;
+      _deliveryDays = '';
     });
-  }
-
-  // 显示时间选择器
-  Future<void> _selectDateRange(BuildContext context) async {
-    final DateTime? start = await showDatePicker(
-      context: context,
-      initialDate: _startDate ?? DateTime.now(),
-      firstDate: DateTime(2020),
-      lastDate: DateTime.now(),
-    );
-
-    if (start != null) {
-      final DateTime? end = await showDatePicker(
-        context: context,
-        initialDate: _endDate ?? DateTime.now(),
-        firstDate: start,
-        lastDate: DateTime.now(),
-      );
-
-      if (end != null) {
-        setState(() {
-          _startDate = start;
-          _endDate = end;
-        });
-        _fetchOrders(_getStatus(controller.tabController.index));
-      }
-    }
   }
 
   // 显示派送方式选择器
   Future<void> _showDeliveryMethodSelector(BuildContext context) async {
-    final List<String> methods = ['全部', '本人签收', '家人待签收', '自提签收'];
+    final List<String> methods = ['全部','当天', '三天内', '五天内','七天内'];
     final String? result = await showModalBottomSheet<String>(
       context: context,
       builder: (BuildContext context) {
@@ -116,7 +82,7 @@ class _DeliveryListPageState extends State<DeliveryListPage> with SingleTickerPr
             final method = methods[index];
             return ListTile(
               title: Text(method),
-              trailing: _deliveryMethod == method ? Icon(Icons.check) : null,
+              trailing: _deliveryDays == method ? Icon(Icons.check) : null,
               onTap: () => Navigator.pop(context, method),
             );
           },
@@ -125,10 +91,10 @@ class _DeliveryListPageState extends State<DeliveryListPage> with SingleTickerPr
     );
 
     if (result != null && result != '全部') {
-      setState(() => _deliveryMethod = result);
+      setState(() => _deliveryDays = result);
       _fetchOrders(_getStatus(controller.tabController.index));
     } else if (result == '全部') {
-      setState(() => _deliveryMethod = null);
+      setState(() => _deliveryDays = null);
       _fetchOrders(_getStatus(controller.tabController.index));
     }
   }
@@ -169,28 +135,6 @@ class _DeliveryListPageState extends State<DeliveryListPage> with SingleTickerPr
           // 筛选按钮行
           Row(
             children: [
-              // 时间选择器
-              Expanded(
-                child: ElevatedButton.icon(
-                  onPressed: () => _selectDateRange(context),
-                  icon: Icon(Icons.calendar_today),
-                  label: Text(
-                    _startDate != null && _endDate != null
-                        ? '${DateFormat('yyyy-MM-dd').format(_startDate!)} - ${DateFormat('yyyy-MM-dd').format(_endDate!)}'
-                        : '选择日期范围',
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  style: ElevatedButton.styleFrom(
-                    foregroundColor: Colors.blue,
-                    backgroundColor: Colors.white,
-                    elevation: 0,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                      side: BorderSide(color: Colors.grey.shade300),
-                    ),
-                  ),
-                ),
-              ),
 
               SizedBox(width: 10),
 
@@ -200,7 +144,7 @@ class _DeliveryListPageState extends State<DeliveryListPage> with SingleTickerPr
                   onPressed: () => _showDeliveryMethodSelector(context),
                   icon: Icon(Icons.local_shipping),
                   label: Text(
-                    _deliveryMethod ?? '派送方式',
+                    _deliveryDays ?? '日期',
                     overflow: TextOverflow.ellipsis,
                   ),
                   style: ElevatedButton.styleFrom(
@@ -221,8 +165,26 @@ class _DeliveryListPageState extends State<DeliveryListPage> with SingleTickerPr
     );
   }
 
+  //返回int型，当前返回1，三天内返回2，五年内返回4，七天内返回6
+  int _getDeliveryDays(String? deliveryDays) {
+    switch (_deliveryDays) {
+      case '全部':
+        return 1;
+      case '当天':
+        return 1;
+      case '三天内':
+        return 2;
+      case '五天内':
+        return 4;
+      case '七天内':
+        return 6;
+      default:
+        return 1;
+    }
+  }
+
   Future<void> _fetchOrders(int status) async {
-    print("_fetchOrders--------------------------------");
+    print("_fetchOrders--------------------------------${_searchText}");
     if (_isRequesting) return;
 
     _isRequesting = true;
@@ -232,22 +194,19 @@ class _DeliveryListPageState extends State<DeliveryListPage> with SingleTickerPr
       final response = await _authApi.DeliverManQueryDeliveryList({
         "orderStatus": status,
         "customerCode": "10010",
-        "orderNumber": _searchText, // 搜索订单号
-        "recipientName": _searchText, // 搜索收件人
-        "startDate": _startDate?.toIso8601String(),
-        "endDate": _endDate?.toIso8601String(),
-        "deliveryMethod": _deliveryMethod,
+        "deliveryContent": _searchText,
+        "deliveryDays": _getDeliveryDays(_deliveryDays),
       });
-
+      _tabIsSelected = false;
       if (response.code == 200) {
         switch (status) {
           case 22:
             setState(() => _pendingList = response.data ?? []);
             break;
-          case 24:
+          case 23:
             setState(() => _completedList = response.data ?? []);
             break;
-          case 23:
+          case 24:
             setState(() => _failedList = response.data ?? []);
             break;
         }

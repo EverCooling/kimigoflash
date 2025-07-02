@@ -162,16 +162,16 @@ class _OutboundScanPageState extends State<OutboundScanPage> {
           ),
 
           // 固定底部按钮
-          Padding(
-            padding: EdgeInsets.all(16.0),
-            child: ElevatedButton(
-              onPressed: controller.upload,
-              style: ElevatedButton.styleFrom(
-                minimumSize: Size(double.infinity, 50),
-              ),
-              child: Text('提交'),
-            ),
-          ),
+          // Padding(
+          //   padding: EdgeInsets.all(16.0),
+          //   child: ElevatedButton(
+          //     onPressed: controller.upload,
+          //     style: ElevatedButton.styleFrom(
+          //       minimumSize: Size(double.infinity, 50),
+          //     ),
+          //     child: Text('提交'),
+          //   ),
+          // ),
         ],
     )
     );
