@@ -185,16 +185,6 @@ class _PendingDeliveryDetailPageState extends State<PendingDeliveryDetail> {
                     ),
                     const SizedBox(height: 16),
 
-                    // // 4. 所属品类1
-                    // _buildCategorySection(
-                    //     '所属品类1', deliveryDetails['category1Items'] ?? []),
-                    // const SizedBox(height: 16),
-                    //
-                    // // 5. 所属品类2
-                    // _buildCategorySection(
-                    //     '所属品类2', deliveryDetails['category2Items'] ?? []),
-                    // const SizedBox(height: 16),
-
                     // 6. 签收方式
                     CustomDropdownField(
                       name: 'signMethod',
@@ -219,16 +209,6 @@ class _PendingDeliveryDetailPageState extends State<PendingDeliveryDetail> {
                     // 7. 签收图片
                     // 图片上传区域
                     SizedBox(height: 8),
-                    // 在页面中使用 MultiAlbumPickerField
-                    // MultiAlbumPickerField(
-                    //   label: '上传签收图片',
-                    //   maxSelection: 5,
-                    //   onImageUploaded: (imagePaths) {
-                    //     _receiptImageUrls = imagePaths;
-                    //     // 处理上传后的图片路径列表
-                    //     print('上传成功：$imagePaths');
-                    //   },
-                    // ),
                     MultiImagePicker(
                       maxCount: 6,
                       onImageUploaded: (imagePaths) {
