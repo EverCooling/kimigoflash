@@ -7,6 +7,7 @@ import 'package:kimiflash/theme/app_colors.dart';
 import 'package:wechat_assets_picker/wechat_assets_picker.dart';
 import 'package:wechat_camera_picker/wechat_camera_picker.dart';
 import 'dart:convert';
+import 'package:photo_view/photo_view.dart'; // 新增依赖：用于图片预览
 
 import '../../http/api/auth_api.dart'; // 导入dart.convert以使用json
 
@@ -63,39 +64,42 @@ class _MultiImagePickerState extends State<MultiImagePicker> {
           itemBuilder: (context, index) {
             if (index < _selectedAssets.length) {
               final asset = _selectedAssets[index];
-              return Stack(
-                fit: StackFit.expand,
-                children: [
-                  Positioned.fill(
-                    child: AssetEntityImage(
-                      asset,
-                      isOriginal: false,
-                      fit: BoxFit.cover,
-                      thumbnailFormat: ThumbnailFormat.jpeg,
-                      errorBuilder: (context, error, stackTrace) =>
-                      const Center(child: Icon(Icons.image_not_supported)),
+              return GestureDetector(
+                onTap: () => _previewImage(index), // 点击图片预览
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    Positioned.fill(
+                      child: AssetEntityImage(
+                        asset,
+                        isOriginal: false,
+                        fit: BoxFit.cover,
+                        thumbnailFormat: ThumbnailFormat.jpeg,
+                        errorBuilder: (context, error, stackTrace) =>
+                        const Center(child: Icon(Icons.image_not_supported)),
+                      ),
                     ),
-                  ),
-                  Positioned(
-                    top: 4,
-                    right: 4,
-                    child: GestureDetector(
-                      onTap: () => _removeAsset(index),
-                      child: Container(
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: AppColors.redGradient[400],
-                        ),
-                        padding: const EdgeInsets.all(2),
-                        child: const Icon(
-                          Icons.close,
-                          color: Colors.white,
-                          size: 16,
+                    Positioned(
+                      top: 4,
+                      right: 4,
+                      child: GestureDetector(
+                        onTap: () => _removeAsset(index),
+                        child: Container(
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: AppColors.redGradient[400],
+                          ),
+                          padding: const EdgeInsets.all(2),
+                          child: const Icon(
+                            Icons.close,
+                            color: Colors.white,
+                            size: 16,
+                          ),
                         ),
                       ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               );
             } else {
               return GestureDetector(
@@ -116,21 +120,6 @@ class _MultiImagePickerState extends State<MultiImagePicker> {
             }
           },
         ),
-        // 显示上传按钮和上传状态
-        // if (_selectedAssets.isNotEmpty)
-        //   Padding(
-        //     padding: const EdgeInsets.symmetric(vertical: 16.0),
-        //     child: ElevatedButton(
-        //       onPressed: _uploadSelectedImages,
-        //       child: const Text('上传图片'),
-        //     ),
-        //   ),
-        // // 可选：显示上传后的图片URL
-        // if (_uploadedUrls.isNotEmpty)
-        //   Column(
-        //     crossAxisAlignment: CrossAxisAlignment.start,
-        //     children: _uploadedUrls.map((url) => Text(url)).toList(),
-        //   ),
       ],
     );
   }
@@ -204,8 +193,6 @@ class _MultiImagePickerState extends State<MultiImagePicker> {
       widget.onChanged?.call(_selectedAssets);
       await _uploadSelectedImages();
     }
-
-
   }
 
   void _removeAsset(int index) {
@@ -215,7 +202,39 @@ class _MultiImagePickerState extends State<MultiImagePicker> {
     widget.onChanged?.call(_selectedAssets);
   }
 
-  // 新增方法：上传选中的图片
+  // 新增方法：预览图片
+  Future<void> _previewImage(int index) async {
+    final asset = _selectedAssets[index];
+    final File? file = await asset.file;
+
+    if (file == null) return;
+
+    // 使用PhotoView进行图片预览
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => Scaffold(
+          appBar: AppBar(
+            backgroundColor: Colors.black,
+            leading: IconButton(
+              icon: const Icon(Icons.close, color: Colors.white),
+              onPressed: () => Navigator.pop(context),
+            ),
+          ),
+          backgroundColor: Colors.black,
+          body: Center(
+            child: PhotoView(
+              imageProvider: FileImage(file),
+              minScale: PhotoViewComputedScale.contained * 0.8,
+              maxScale: PhotoViewComputedScale.covered * 2,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  // 上传选中的图片
   Future<void> _uploadSelectedImages() async {
     if (_selectedAssets.isEmpty) return;
 
