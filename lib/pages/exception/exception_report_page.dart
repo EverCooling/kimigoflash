@@ -23,8 +23,6 @@ class ExceptionReportPage extends StatefulWidget{
 
 class _ExceptionReportPageState extends State<ExceptionReportPage> {
   final controller = Get.put(ExceptionReportController());
-  final scanController = TextEditingController();
-
   List<String>? _receiptImageUrls;
   final AuthApi _authApi = AuthApi();
   String? orderNumber;
@@ -109,26 +107,24 @@ class _ExceptionReportPageState extends State<ExceptionReportPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // 运单号输入
-              FormBuilderTextField(
+              CustomTextField(
                 name: 'trackingNumber',
-                decoration: InputDecoration(
-                  labelText: '扫描单号',
-                  hintText: '请输入运单号',
-                  prefixIcon: Icon(Icons.vertical_distribute,color: Colors.red,),
-                  suffixIcon: Icon(Icons.barcode_reader),
-                ),
-                validator: (value) {
-                  if (value == null || value.toString().isEmpty) {
-                    return '请输入运单号';
+                labelText: '扫描单号',
+                hintText: '请输入运单号',
+                controller: controller.scanController,
+                prefixIcon: Icons.vertical_distribute,
+                suffixIcon: Icons.barcode_reader,
+                onSuffixPressed: () async {
+                  final barcodeResult = await Get.toNamed('/scanner');
+                  if (barcodeResult != null) {
+                    _formKey.currentState?.fields['trackingNumber']?.didChange(barcodeResult);
                   }
-                  return null;
                 },
-                onSaved: (value) => orderNumber = value,
-                initialValue: orderNumber,
+                onSubmitted: (value) async {
+
+                },
               ),
               SizedBox(height: 20),
-
               // 异常原因选择
               FormBuilderField(
                 name: 'deliveryFailType',

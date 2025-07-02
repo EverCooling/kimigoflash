@@ -43,7 +43,7 @@ class ApiService {
         }
 
         // 添加 Token 到 headers
-        final token = await _getToken();
+        final token = await getToken();
         if (token.isNotEmpty) {
           options.headers['Authorization'] = 'Bearer $token';
         }
@@ -73,7 +73,7 @@ class ApiService {
   }
 
   // 获取 Token
-  Future<String> _getToken() async {
+  Future<String> getToken() async {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getString('token') ?? '';
   }

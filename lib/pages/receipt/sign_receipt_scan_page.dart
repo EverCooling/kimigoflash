@@ -15,6 +15,7 @@ import 'package:riverpod/src/framework.dart';
 import '../../http/api/auth_api.dart';
 import '../widgets/custom_dropdown_field.dart';
 import '../widgets/custom_text_field.dart';
+import '../widgets/multi_image_picker.dart';
 import '../widgets/sign_method_bottom_sheet.dart';
 import '../widgets/signature_pad.dart';
 import '../widgets/signature_preview.dart';
@@ -186,14 +187,11 @@ class _SignReceiptScanPageState extends State<SignReceiptScanPage> {
 
                     // 图片上传区域
                     SizedBox(height: 8),
-                    // 在页面中使用 MultiAlbumPickerField
-                    MultiAlbumPickerField(
-                      label: '上传签收图片',
-                      maxSelection: 5,
+                    // 图片上传
+                    MultiImagePicker(
+                      maxCount: 3,
                       onImageUploaded: (imagePaths) {
                         _receiptImageUrls = imagePaths;
-                        // 处理上传后的图片路径列表
-                        print('上传成功：$imagePaths');
                       },
                     ),
                     SizedBox(height: 20),

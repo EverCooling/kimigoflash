@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:kimiflash/pages/widgets/loading_manager.dart';
-import 'package:loading_overlay/loading_overlay.dart';
 import '../../http/api/auth_api.dart';
 import '../widgets/custom_text_field.dart';
 import 'outbound_scan_controller.dart'; // 引入控制器
@@ -155,7 +154,6 @@ class _OutboundScanPageState extends State<OutboundScanPage> {
                       ),
                     ],
                   )
-
                 ],
               ),
             ),
