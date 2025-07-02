@@ -1,6 +1,7 @@
 
 // delivery_list_item.dart
 import 'package:flutter/material.dart';
+import 'package:kimiflash/theme/app_colors.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class DeliveryListItem extends StatelessWidget {
@@ -43,7 +44,7 @@ class DeliveryListItem extends StatelessWidget {
                 Text('地址：${item['recipetenAddressFirst'] ?? ''}${item['recipetenAddressSecond'] ?? ''}${item['recipetenAddressThid'] ?? ''}'),
                 GestureDetector(
                   onTap: () => _showMapOptions(context),
-                  child: Icon(Icons.open_in_new, color: Colors.blue),
+                  child: Icon(Icons.open_in_new, color: AppColors.redGradient[500]),
                 ),
               ]),
             ],

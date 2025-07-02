@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import 'package:kimiflash/http/api/auth_api.dart';
 import 'package:kimiflash/pages/delivery/components/delivery_list_item.dart';
 import 'package:kimiflash/pages/widgets/loading_manager.dart';
+import 'package:kimiflash/theme/app_colors.dart';
 import 'package:loading_overlay/loading_overlay.dart';
 import 'package:intl/intl.dart';
 import 'delivery_list_controller.dart';
@@ -115,7 +116,7 @@ class _DeliveryListPageState extends State<DeliveryListPage> with SingleTickerPr
               controller: _searchController,
               decoration: InputDecoration(
                 hintText: '搜索订单号、收件人...',
-                prefixIcon: Icon(Icons.search),
+                prefixIcon: Icon(Icons.search, color: AppColors.redGradient[400]),
                 suffixIcon: _searchText.isNotEmpty
                     ? IconButton(
                   icon: Icon(Icons.clear),
@@ -128,9 +129,20 @@ class _DeliveryListPageState extends State<DeliveryListPage> with SingleTickerPr
                   },
                 )
                     : null,
+                // 设置红色边框 - 修复未聚焦时边框颜色不生效的问题
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8),
+                  borderSide: BorderSide.none, // 默认无边框（被其他状态覆盖）
                 ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: BorderSide(color: Colors.red), // 未聚焦时的红色边框
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: BorderSide(color: Colors.red.shade700), // 聚焦时的深红色边框
+                ),
+                contentPadding: EdgeInsets.symmetric(vertical: 11, horizontal: 16), // 高度约42
               ),
               onChanged: (value) => _searchText = value,
               onSubmitted: (value) => _fetchOrders(_getStatus(controller.tabController.index)),
@@ -140,16 +152,17 @@ class _DeliveryListPageState extends State<DeliveryListPage> with SingleTickerPr
           SizedBox(width: 10),
           // 时间选择按钮 - 固定宽度
           ConstrainedBox(
-            constraints: BoxConstraints(minWidth: 20),
+            constraints: BoxConstraints(minWidth: 10),
             child: ElevatedButton.icon(
               onPressed: () => _showDeliveryMethodSelector(context),
-              icon: Icon(Icons.calendar_today),
+              icon: Icon(Icons.calendar_today,size: 12,),
               label: Text(
+                style: TextStyle(color: AppColors.redGradient[400],fontSize: 12),
                 _deliveryDays ?? '时间筛选',
                 overflow: TextOverflow.ellipsis,
               ),
               style: ElevatedButton.styleFrom(
-                foregroundColor: Colors.blue,
+                foregroundColor: Colors.redAccent,
                 backgroundColor: Colors.white,
                 elevation: 0,
                 shape: RoundedRectangleBorder(

@@ -152,13 +152,13 @@ class _ExceptionReportPageState extends State<ExceptionReportPage> {
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
                         ),
-                        additionalActions: [
-                          Divider(),
-                          ListTile(
-                            title: Text('取消', style: TextStyle(color: Colors.grey)),
-                            onTap: () => Navigator.pop(context),
-                          ),
-                        ],
+                        // additionalActions: [
+                          // Divider(),
+                          // ListTile(
+                          //   title: Text('取消', style: TextStyle(color: Colors.grey)),
+                          //   onTap: () => Navigator.pop(context),
+                          // ),
+                        // ],
                       );
                       if (result != null) {
                         setState(() {

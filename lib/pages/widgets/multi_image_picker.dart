@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:kimiflash/pages/widgets/loading_manager.dart';
+import 'package:kimiflash/theme/app_colors.dart';
 import 'package:wechat_assets_picker/wechat_assets_picker.dart';
 import 'package:wechat_camera_picker/wechat_camera_picker.dart';
 import 'dart:convert';
@@ -81,9 +82,9 @@ class _MultiImagePickerState extends State<MultiImagePicker> {
                     child: GestureDetector(
                       onTap: () => _removeAsset(index),
                       child: Container(
-                        decoration: const BoxDecoration(
+                        decoration: BoxDecoration(
                           shape: BoxShape.circle,
-                          color: Colors.black54,
+                          color: AppColors.redGradient[400],
                         ),
                         padding: const EdgeInsets.all(2),
                         child: const Icon(
@@ -101,13 +102,13 @@ class _MultiImagePickerState extends State<MultiImagePicker> {
                 onTap: _showImageSourceDialog,
                 child: Container(
                   decoration: BoxDecoration(
-                    border: Border.all(color: Colors.grey.withOpacity(0.3)),
+                    border: Border.all(color: Color(0xFFEE5C5C)),
                     borderRadius: BorderRadius.circular(4),
                   ),
                   child: const Center(
                     child: Icon(
                       Icons.add,
-                      color: Colors.grey,
+                      color: Color(0xFFEE5C5C),
                     ),
                   ),
                 ),
