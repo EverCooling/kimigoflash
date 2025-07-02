@@ -60,16 +60,6 @@ class CustomTextField extends StatelessWidget {
         suffixIcon: suffixIcon != null
             ? IconButton(icon: Icon(suffixIcon), onPressed: onSuffixPressed)
             : null,
-        // suffixIcon: isLoading
-        //     ? SizedBox(
-        //   width: 20,
-        //   height: 20,
-        //   child: CircularProgressIndicator(strokeWidth: 2),
-        // )
-        //     : IconButton(
-        //   icon: Icon(Icons.barcode_reader),
-        //   onPressed: onSuffixPressed,
-        // ),
       ),
       onSubmitted: onSubmitted,
     );

@@ -9,6 +9,8 @@ import 'package:kimiflash/pages/widgets/multi_image_picker.dart';
 import 'package:kimiflash/pages/widgets/sign_method_bottom_sheet.dart';
 import 'package:kimiflash/pages/exception/exception_report_controller.dart';
 
+import '../widgets/custom_text_field.dart';
+
 class ExceptionReportPage extends StatefulWidget{
   final Map<String, dynamic> deliveryItem;
 
@@ -21,6 +23,8 @@ class ExceptionReportPage extends StatefulWidget{
 
 class _ExceptionReportPageState extends State<ExceptionReportPage> {
   final controller = Get.put(ExceptionReportController());
+  final scanController = TextEditingController();
+
   List<String>? _receiptImageUrls;
   final AuthApi _authApi = AuthApi();
   String? orderNumber;
@@ -111,7 +115,7 @@ class _ExceptionReportPageState extends State<ExceptionReportPage> {
                 decoration: InputDecoration(
                   labelText: '扫描单号',
                   hintText: '请输入运单号',
-                  prefixIcon: Icon(Icons.vertical_distribute),
+                  prefixIcon: Icon(Icons.vertical_distribute,color: Colors.red,),
                   suffixIcon: Icon(Icons.barcode_reader),
                 ),
                 validator: (value) {
