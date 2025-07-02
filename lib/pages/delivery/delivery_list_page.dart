@@ -102,66 +102,62 @@ class _DeliveryListPageState extends State<DeliveryListPage> with SingleTickerPr
     }
   }
 
-  // 构建搜索区域
+  // 构建搜索区域（搜索框和时间选择器同一行）
   Widget _buildSearchArea() {
     return Container(
       padding: EdgeInsets.all(10),
       color: Colors.grey[100],
-      child: Column(
+      child: Row(
         children: [
-          // 搜索框
-          TextField(
-            controller: _searchController,
-            decoration: InputDecoration(
-              hintText: '搜索订单号、收件人...',
-              prefixIcon: Icon(Icons.search),
-              suffixIcon: _searchText.isNotEmpty
-                  ? IconButton(
-                icon: Icon(Icons.clear),
-                onPressed: () {
-                  setState(() {
-                    _searchText = '';
-                    _searchController.clear();
-                  });
-                  _fetchOrders(_getStatus(controller.tabController.index));
-                },
-              )
-                  : null,
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-            ),
-            onChanged: (value) => _searchText = value,
-            onSubmitted: (value) => _fetchOrders(_getStatus(controller.tabController.index)),
-          ),
-
-          // 筛选按钮行
-          Row(
-            children: [
-
-              SizedBox(width: 10),
-
-              // 派送方式选择器
-              Expanded(
-                child: ElevatedButton.icon(
-                  onPressed: () => _showDeliveryMethodSelector(context),
-                  icon: Icon(Icons.local_shipping),
-                  label: Text(
-                    _deliveryDays ?? '日期',
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  style: ElevatedButton.styleFrom(
-                    foregroundColor: Colors.blue,
-                    backgroundColor: Colors.white,
-                    elevation: 0,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                      side: BorderSide(color: Colors.grey.shade300),
-                    ),
-                  ),
+          // 搜索框 - 占据大部分宽度
+          Expanded(
+            child: TextField(
+              controller: _searchController,
+              decoration: InputDecoration(
+                hintText: '搜索订单号、收件人...',
+                prefixIcon: Icon(Icons.search),
+                suffixIcon: _searchText.isNotEmpty
+                    ? IconButton(
+                  icon: Icon(Icons.clear),
+                  onPressed: () {
+                    setState(() {
+                      _searchText = '';
+                      _searchController.clear();
+                    });
+                    _fetchOrders(_getStatus(controller.tabController.index));
+                  },
+                )
+                    : null,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
                 ),
               ),
-            ],
+              onChanged: (value) => _searchText = value,
+              onSubmitted: (value) => _fetchOrders(_getStatus(controller.tabController.index)),
+            ),
+          ),
+          // 间隔
+          SizedBox(width: 10),
+          // 时间选择按钮 - 固定宽度
+          ConstrainedBox(
+            constraints: BoxConstraints(minWidth: 20),
+            child: ElevatedButton.icon(
+              onPressed: () => _showDeliveryMethodSelector(context),
+              icon: Icon(Icons.calendar_today),
+              label: Text(
+                _deliveryDays ?? '时间筛选',
+                overflow: TextOverflow.ellipsis,
+              ),
+              style: ElevatedButton.styleFrom(
+                foregroundColor: Colors.blue,
+                backgroundColor: Colors.white,
+                elevation: 0,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  side: BorderSide(color: Colors.grey.shade300),
+                ),
+              ),
+            ),
           ),
         ],
       ),
