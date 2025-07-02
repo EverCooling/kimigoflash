@@ -2,6 +2,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_form_builder/flutter_form_builder.dart';
 import 'package:get/get.dart';
+import 'package:kimiflash/pages/completed_delivery/model/delivery_detail.dart';
 import 'package:kimiflash/pages/delivery/detail/pending_delivery_detail_controller.dart';
 import 'dart:convert'; // 确保导入了jsonEncode方法
 import '../../../http/api/auth_api.dart';
@@ -25,7 +26,7 @@ class PendingDeliveryDetail extends StatefulWidget {
 class _PendingDeliveryDetailPageState extends State<PendingDeliveryDetail> {
   final AuthApi _authApi = AuthApi();
   final controller = Get.put(PendingDeliveryDetailController());
-  late Map<String, dynamic> deliveryDetails; // 用于存储请求返回的数据
+  DeliveryDetail? deliveryDetails;
   List<String>? _receiptImageUrls;
   String? _signatureImageUrl;
   final _formKey = GlobalKey<FormBuilderState>();
@@ -33,7 +34,6 @@ class _PendingDeliveryDetailPageState extends State<PendingDeliveryDetail> {
   @override
   void initState() {
     super.initState();
-    deliveryDetails = {}; // 初始化为空对象
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _fetchOrders(widget.deliveryItem['id']);
     });
@@ -75,7 +75,7 @@ class _PendingDeliveryDetailPageState extends State<PendingDeliveryDetail> {
       try {
         // 获取表单值
         final Map<String, dynamic> formData = form!.value;
-        final String kyInStorageNumber = deliveryDetails['kyInStorageNumber'] ?? '';
+        final String? kyInStorageNumber = deliveryDetails?.kyInStorageNumber;
         final String signMethod = formData['signMethod'] ?? '';
 
         // 调用API提交数据
@@ -87,6 +87,7 @@ class _PendingDeliveryDetailPageState extends State<PendingDeliveryDetail> {
           'customerCode': '10010'
         });
         if (response.code == 200) {
+
           Get.snackbar('成功', '签收成功');
         } else {
           Get.snackbar('失败', response.msg ?? '验证失败');
@@ -110,13 +111,13 @@ class _PendingDeliveryDetailPageState extends State<PendingDeliveryDetail> {
 
       if (response.code == 200) {
         setState(() {
-          deliveryDetails = response.data; // 假设Response类有一个data字段包含详细数据
+          deliveryDetails = DeliveryDetail.fromJson(response.data);
         });
       } else {
         Get.snackbar(
           '加载失败',
-          response.msg ?? '未知错误',
           snackPosition: SnackPosition.BOTTOM,
+          response.msg,
         );
       }
     } catch (e) {
@@ -134,7 +135,7 @@ class _PendingDeliveryDetailPageState extends State<PendingDeliveryDetail> {
   Widget build(BuildContext context) {
     final controller = Get.find<PendingDeliveryDetailController>();
     return Scaffold(
-      appBar: AppBar(title: const Text('派送详情')),
+      appBar: AppBar(title: const Text('待派详情')),
       body: Column(
         children: [
           // 可滚动内容区域
@@ -149,7 +150,7 @@ class _PendingDeliveryDetailPageState extends State<PendingDeliveryDetail> {
                     // 1. 单号展示(独占一栏)
                     _buildInfoCard(
                       title: '运单号',
-                      content: deliveryDetails['kyInStorageNumber'] ?? '',
+                      content: deliveryDetails?.kyInStorageNumber,
                       icon: Icons.confirmation_number,
                     ),
                     const SizedBox(height: 16),
@@ -160,27 +161,34 @@ class _PendingDeliveryDetailPageState extends State<PendingDeliveryDetail> {
                       children: [
                         _buildInfoRow(
                           '姓名',
-                          deliveryDetails['recipientName'] ?? '',
-                          Icons.person,
+                          deliveryDetails?.recipientName ?? '',                          Icons.person,
                         ),
                         _buildInfoRow(
                           '电话',
-                          deliveryDetails['recipietnMobile'] ?? '',
+                          deliveryDetails?.recipietnMobile ?? '',
                           Icons.phone,
                         ),
                         _buildInfoRow(
                           '地址',
-                          deliveryDetails['recipetenAddressFirst'] ?? '',
+                          deliveryDetails?.recipetenAddressFirst ?? '',
                           Icons.location_on,
                         ),
                       ],
                     ),
                     const SizedBox(height: 16),
 
+                    _buildInfoCard(title: '品类', children: [
+                      _buildCategoryRow(
+                        '品类1',
+                        deliveryDetails?.deliveryCustomerOrderDetailViewList,
+                      ),
+                    ]),
+
+
                     // 3. 总件数
                     _buildInfoCard(
                       title: '总件数',
-                      content: '${deliveryDetails['pcsCount'] ?? '0'}件',
+                      content: '${deliveryDetails?.pcsCount ?? '0'}件',
                       icon: Icons.format_list_numbered,
                     ),
                     const SizedBox(height: 16),
@@ -346,36 +354,56 @@ class _PendingDeliveryDetailPageState extends State<PendingDeliveryDetail> {
     );
   }
 
-  // 构建品类区域
-  //   Widget _buildCategorySection(String title, List<dynamic> items) {
-  //     return _buildInfoCard(
-  //       title: title,
-  //       children: [
-  //         const SizedBox(height: 8),
-  //         Padding(
-  //           padding: const EdgeInsets.symmetric(horizontal: 16.0),
-  //           child: Column(
-  //             crossAxisAlignment: CrossAxisAlignment.start,
-  //             children: items
-  //                 .map((item) => _buildCategoryItem(item.toString()))
-  //                 .toList(),
-  //           ),
-  //         ),
-  //       ],
-  //     );
-  //   }
+  Widget _buildCategoryRow(String label, List<OrderItem>? items) {
+    if (items == null || items.isEmpty) {
+      return _buildDetailRow(label: label, value: '无', icon: Icons.category);
+    }
 
-  // 构建单个品类项
-  //   Widget _buildCategoryItem(String itemName) {
-  //     return Padding(
-  //       padding: const EdgeInsets.symmetric(vertical: 4.0),
-  //       child: Row(
-  //         children: [
-  //           Icon(Icons.circle, size: 8, color: Colors.grey),
-  //           const SizedBox(width: 8),
-  //           Text(itemName),
-  //         ],
-  //       ),
-  //     );
-  //   }
+    final List<Widget> categoryWidgets = items.map((item) {
+      return _buildDetailRow(
+        label: label,
+        value: item.brandEnglishName,
+        icon: Icons.category,
+        quantity: item.pcs.toString(),
+      );
+    }).toList();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: categoryWidgets,
+    );
+  }
+
+  Widget _buildDetailRow({required String label, required String value, required IconData icon, String quantity = ''}) {
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(4.0),
+      ),
+      padding: const EdgeInsets.all(8.0),
+      margin: const EdgeInsets.symmetric(vertical: 4.0),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, size: 16, color: Colors.red),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(label, style: TextStyle(color: Colors.grey, fontSize: 16)),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(value, style: TextStyle(fontSize: 16)),
+                    if (quantity.isNotEmpty) Text('数量：$quantity}'),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
 }

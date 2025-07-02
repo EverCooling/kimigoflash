@@ -7,9 +7,10 @@ import 'package:kimiflash/theme/app_colors.dart';
 import 'package:wechat_assets_picker/wechat_assets_picker.dart';
 import 'package:wechat_camera_picker/wechat_camera_picker.dart';
 import 'dart:convert';
-import 'package:photo_view/photo_view.dart'; // 新增依赖：用于图片预览
+import 'package:photo_view/photo_view.dart';
+import 'package:photo_view/photo_view_gallery.dart';
 
-import '../../http/api/auth_api.dart'; // 导入dart.convert以使用json
+import '../../http/api/auth_api.dart';
 
 class MultiImagePicker extends StatefulWidget {
   final int maxCount;
@@ -31,7 +32,7 @@ class MultiImagePicker extends StatefulWidget {
 
 class _MultiImagePickerState extends State<MultiImagePicker> {
   late List<AssetEntity> _selectedAssets;
-  List<String> _uploadedUrls = []; // 存储上传后的图片URL
+  List<String> _uploadedUrls = [];
 
   @override
   void initState() {
@@ -65,7 +66,7 @@ class _MultiImagePickerState extends State<MultiImagePicker> {
             if (index < _selectedAssets.length) {
               final asset = _selectedAssets[index];
               return GestureDetector(
-                onTap: () => _previewImage(index), // 点击图片预览
+                onTap: () => _previewImage(index),
                 child: Stack(
                   fit: StackFit.expand,
                   children: [
@@ -202,14 +203,20 @@ class _MultiImagePickerState extends State<MultiImagePicker> {
     widget.onChanged?.call(_selectedAssets);
   }
 
-  // 新增方法：预览图片
+  // 预览图片（支持滚动和点击退出）
   Future<void> _previewImage(int index) async {
-    final asset = _selectedAssets[index];
-    final File? file = await asset.file;
+    if (_selectedAssets.isEmpty) return;
 
-    if (file == null) return;
+    // 加载所有图片文件
+    final List<File?> files = [];
+    for (var asset in _selectedAssets) {
+      files.add(await asset.file);
+    }
 
-    // 使用PhotoView进行图片预览
+    // 过滤空文件
+    final validFiles = files.where((file) => file != null).toList();
+    if (validFiles.isEmpty) return;
+
     await Navigator.push(
       context,
       MaterialPageRoute(
@@ -222,11 +229,24 @@ class _MultiImagePickerState extends State<MultiImagePicker> {
             ),
           ),
           backgroundColor: Colors.black,
-          body: Center(
-            child: PhotoView(
-              imageProvider: FileImage(file),
-              minScale: PhotoViewComputedScale.contained * 0.8,
-              maxScale: PhotoViewComputedScale.covered * 2,
+          body: GestureDetector(
+            onTap: () => Navigator.pop(context), // 点击任意位置退出预览
+            child: PhotoViewGallery.builder(
+              scrollPhysics: const BouncingScrollPhysics(), // 启用滚动效果
+              itemCount: validFiles.length,
+              builder: (context, index) {
+                final file = validFiles[index];
+                return PhotoViewGalleryPageOptions(
+                  imageProvider: FileImage(file!),
+                  minScale: PhotoViewComputedScale.contained * 0.8,
+                  maxScale: PhotoViewComputedScale.covered * 2,
+                  initialScale: PhotoViewComputedScale.contained,
+                );
+              },
+              pageController: PageController(initialPage: index),
+              loadingBuilder: (context, event) => const Center(
+                child: CircularProgressIndicator(),
+              ),
             ),
           ),
         ),
@@ -245,9 +265,7 @@ class _MultiImagePickerState extends State<MultiImagePicker> {
         final File? file = await asset.file;
         if (file != null) {
           final response = await AuthApi().uploadFile(file);
-          print("图片上传成功");
-          print(response.data['value']);
-          if(response.data != null) {
+          if (response.data != null) {
             uploadedUrls.add(response.data!['value']);
           }
         }
@@ -257,12 +275,9 @@ class _MultiImagePickerState extends State<MultiImagePicker> {
         _uploadedUrls = uploadedUrls;
       });
 
-      // 回调返回上传后的路径
       if (_uploadedUrls.isNotEmpty) {
-        print(_uploadedUrls);
         widget.onImageUploaded(_uploadedUrls);
       }
-      // 提示用户上传成功
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('图片上传成功')),
       );
