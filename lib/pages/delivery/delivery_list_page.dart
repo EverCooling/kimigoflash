@@ -6,6 +6,7 @@ import 'package:kimiflash/pages/widgets/loading_manager.dart';
 import 'package:kimiflash/theme/app_colors.dart';
 import 'package:loading_overlay/loading_overlay.dart';
 import 'package:intl/intl.dart';
+import 'package:liquid_pull_to_refresh/liquid_pull_to_refresh.dart';
 import 'delivery_list_controller.dart';
 
 class DeliveryListPage extends StatefulWidget {
@@ -17,6 +18,9 @@ class _DeliveryListPageState extends State<DeliveryListPage> with SingleTickerPr
   final AuthApi _authApi = AuthApi();
   final controller = Get.put(DeliveryListController());
   bool _isRequesting = false;
+  bool _isRefreshing = false; // 下拉刷新状态
+  bool _isLoadingMore = false; // 上拉加载状态
+  bool _hasMoreData = true; // 是否还有更多数据
   List<dynamic> _pendingList = [];   // 待派件
   List<dynamic> _completedList = []; // 已派件
   List<dynamic> _failedList = [];    // 派件失败
@@ -24,20 +28,36 @@ class _DeliveryListPageState extends State<DeliveryListPage> with SingleTickerPr
   String _searchText = '';
   String? _deliveryDays =  ''; // 派送方式
   final TextEditingController _searchController = TextEditingController();
+  late ScrollController _scrollController; // 滚动控制器，用于监听上拉加载
+  int _currentPage = 1; // 当前页码
+  final int _pageSize = 10; // 每页数量
 
   @override
   void initState() {
     super.initState();
     controller.tabController.addListener(_handleChange);
+    _scrollController = ScrollController()..addListener(_handleScroll);
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _fetchOrders(_getStatus(controller.tabController.index));
+      _fetchOrders(_getStatus(controller.tabController.index), isRefresh: true);
     });
   }
 
   @override
   void dispose() {
     _searchController.dispose();
+    _scrollController.dispose();
     super.dispose();
+  }
+
+  // 处理滚动事件，实现上拉加载
+  void _handleScroll() {
+    if (_isLoadingMore || !_hasMoreData) return;
+
+    // 当滚动到距离底部200像素时触发加载更多
+    if (_scrollController.position.pixels >=
+        _scrollController.position.maxScrollExtent - 200) {
+      _fetchMoreOrders(_getStatus(controller.tabController.index));
+    }
   }
 
   _handleChange() {
@@ -46,7 +66,9 @@ class _DeliveryListPageState extends State<DeliveryListPage> with SingleTickerPr
 
     if (controller.tabController.indexIsChanging) {
       _clearFilters(); // 切换标签时重置筛选条件
-      Future.microtask(() => _fetchOrders(_getStatus(controller.tabController.index)));
+      _currentPage = 1; // 重置页码
+      _hasMoreData = true; // 重置是否有更多数据标记
+      Future.microtask(() => _fetchOrders(_getStatus(controller.tabController.index), isRefresh: true));
     }
   }
 
@@ -96,10 +118,10 @@ class _DeliveryListPageState extends State<DeliveryListPage> with SingleTickerPr
 
     if (result != null && result != '全部') {
       setState(() => _deliveryDays = result);
-      _fetchOrders(_getStatus(controller.tabController.index));
+      _fetchOrders(_getStatus(controller.tabController.index), isRefresh: true);
     } else if (result == '全部') {
       setState(() => _deliveryDays = null);
-      _fetchOrders(_getStatus(controller.tabController.index));
+      _fetchOrders(_getStatus(controller.tabController.index), isRefresh: true);
     }
   }
 
@@ -125,7 +147,7 @@ class _DeliveryListPageState extends State<DeliveryListPage> with SingleTickerPr
                       _searchText = '';
                       _searchController.clear();
                     });
-                    _fetchOrders(_getStatus(controller.tabController.index));
+                    _fetchOrders(_getStatus(controller.tabController.index), isRefresh: true);
                   },
                 )
                     : null,
@@ -145,7 +167,7 @@ class _DeliveryListPageState extends State<DeliveryListPage> with SingleTickerPr
                 contentPadding: EdgeInsets.symmetric(vertical: 11, horizontal: 16), // 高度约42
               ),
               onChanged: (value) => _searchText = value,
-              onSubmitted: (value) => _fetchOrders(_getStatus(controller.tabController.index)),
+              onSubmitted: (value) => _fetchOrders(_getStatus(controller.tabController.index), isRefresh: true),
             ),
           ),
           // 间隔
@@ -195,31 +217,56 @@ class _DeliveryListPageState extends State<DeliveryListPage> with SingleTickerPr
     }
   }
 
-  Future<void> _fetchOrders(int status) async {
-    print("_fetchOrders--------------------------------${_searchText}");
-    if (_isRequesting) return;
+  // 下拉刷新的回调函数
+  Future<void> _handleRefresh() async {
+    if (_isRefreshing) return;
 
-    _isRequesting = true;
-    HUD.show(context);
+    final currentStatus = _getStatus(controller.tabController.index);
+    await _fetchOrders(currentStatus, isRefresh: true);
+  }
+
+  // 加载更多数据
+  Future<void> _fetchMoreOrders(int status) async {
+    if (_isLoadingMore || !_hasMoreData) return;
+
+    setState(() {
+      _isLoadingMore = true;
+    });
 
     try {
+      final nextPage = _currentPage + 1;
       final response = await _authApi.DeliverManQueryDeliveryList({
         "orderStatus": status,
         "customerCode": "10010",
         "deliveryContent": _searchText,
         "deliveryDays": _getDeliveryDays(_deliveryDays),
+        "page": nextPage,
+        "pageSize": _pageSize,
       });
-      _tabIsSelected = false;
+
       if (response.code == 200) {
+        final newData = response.data ?? [];
+        _currentPage = nextPage;
+
+        // 根据状态更新对应的列表
         switch (status) {
           case 22:
-            setState(() => _pendingList = response.data ?? []);
+            setState(() {
+              _pendingList.addAll(newData);
+              _hasMoreData = newData.length == _pageSize;
+            });
             break;
           case 23:
-            setState(() => _completedList = response.data ?? []);
+            setState(() {
+              _completedList.addAll(newData);
+              _hasMoreData = newData.length == _pageSize;
+            });
             break;
           case 24:
-            setState(() => _failedList = response.data ?? []);
+            setState(() {
+              _failedList.addAll(newData);
+              _hasMoreData = newData.length == _pageSize;
+            });
             break;
         }
       } else {
@@ -228,8 +275,77 @@ class _DeliveryListPageState extends State<DeliveryListPage> with SingleTickerPr
     } catch (e) {
       Get.snackbar('网络错误', e.toString());
     } finally {
-      HUD.hide();
-      _isRequesting = false;
+      setState(() {
+        _isLoadingMore = false;
+      });
+    }
+  }
+
+  // 获取订单列表
+  Future<void> _fetchOrders(int status, {bool isRefresh = false}) async {
+    print("_fetchOrders--------------------------------${_searchText}");
+    if (_isRequesting) return;
+
+    if (isRefresh) {
+      setState(() {
+        _isRefreshing = true;
+        _currentPage = 1;
+        _hasMoreData = true;
+      });
+    } else {
+      _isRequesting = true;
+      HUD.show(context);
+    }
+
+    try {
+      final response = await _authApi.DeliverManQueryDeliveryList({
+        "orderStatus": status,
+        "customerCode": "10010",
+        "deliveryContent": _searchText,
+        "deliveryDays": _getDeliveryDays(_deliveryDays),
+        "page": _currentPage,
+        "pageSize": _pageSize,
+      });
+      _tabIsSelected = false;
+
+      if (response.code == 200) {
+        final data = response.data ?? [];
+
+        // 根据状态更新对应的列表
+        switch (status) {
+          case 22:
+            setState(() {
+              _pendingList = isRefresh ? data : _pendingList;
+              _hasMoreData = data.length == _pageSize;
+            });
+            break;
+          case 23:
+            setState(() {
+              _completedList = isRefresh ? data : _completedList;
+              _hasMoreData = data.length == _pageSize;
+            });
+            break;
+          case 24:
+            setState(() {
+              _failedList = isRefresh ? data : _failedList;
+              _hasMoreData = data.length == _pageSize;
+            });
+            break;
+        }
+      } else {
+        Get.snackbar('加载失败', response.msg ?? '未知错误');
+      }
+    } catch (e) {
+      Get.snackbar('网络错误', e.toString());
+    } finally {
+      if (isRefresh) {
+        setState(() {
+          _isRefreshing = false;
+        });
+      } else {
+        HUD.hide();
+        _isRequesting = false;
+      }
       _tabIsSelected = false;
     }
   }
@@ -256,11 +372,11 @@ class _DeliveryListPageState extends State<DeliveryListPage> with SingleTickerPr
               controller: controller.tabController,
               children: [
                 // 待派件
-                _buildOrderList(_pendingList, 'pending'),
+                _buildRefreshableList(_pendingList, 'pending'),
                 // 已派件
-                _buildOrderList(_completedList, 'completed'),
+                _buildRefreshableList(_completedList, 'completed'),
                 // 派件失败
-                _buildOrderList(_failedList, 'failed'),
+                _buildRefreshableList(_failedList, 'failed'),
               ],
             ),
           ),
@@ -269,20 +385,52 @@ class _DeliveryListPageState extends State<DeliveryListPage> with SingleTickerPr
     );
   }
 
-  Widget _buildOrderList(List<dynamic> orders, String type) {
-    if (orders.isEmpty) {
-      return Center(child: Text('暂无数据'));
-    }
+  // 构建可刷新的列表
+  Widget _buildRefreshableList(List<dynamic> orders, String type) {
+    return LiquidPullToRefresh(
+      onRefresh: _handleRefresh,
+      showChildOpacityTransition: false,
+      color: Colors.red, // 使用红色作为刷新指示器颜色
+      backgroundColor: Colors.white,
+      child: ListView.builder(
+        controller: _scrollController,
+        itemCount: orders.length + (_isLoadingMore || _hasMoreData ? 1 : 0),
+        itemBuilder: (context, index) {
+          if (index < orders.length) {
+            // 显示数据项
+            final order = orders[index];
+            return DeliveryListItem(
+              item: order,
+              onTap: () => controller.navigateToDetail(order, type),
+            );
+          } else {
+            // 显示加载更多指示器
+            return _buildLoadingIndicator();
+          }
+        },
+      ),
+    );
+  }
 
-    return ListView.builder(
-      itemCount: orders.length,
-      itemBuilder: (context, index) {
-        final order = orders[index];
-        return DeliveryListItem(
-          item: order,
-          onTap: () => controller.navigateToDetail(order, type),
-        );
-      },
+  // 构建加载更多指示器
+  Widget _buildLoadingIndicator() {
+    return Container(
+      padding: EdgeInsets.symmetric(vertical: 16),
+      alignment: Alignment.center,
+      child: _isLoadingMore
+          ? Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          CircularProgressIndicator(
+            valueColor: AlwaysStoppedAnimation<Color>(Colors.red),
+          ),
+          SizedBox(width: 10),
+          Text('加载更多...'),
+        ],
+      )
+          : _hasMoreData
+          ? Text('上拉加载更多')
+          : Text('没有更多数据了'),
     );
   }
 }

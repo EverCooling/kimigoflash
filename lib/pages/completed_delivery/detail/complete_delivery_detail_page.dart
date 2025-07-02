@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:kimiflash/pages/widgets/multi_preview_image.dart';
 import '../../../http/api/auth_api.dart';
 import '../../widgets/loading_manager.dart';
 import '../model/delivery_detail.dart';
@@ -21,6 +22,20 @@ class _CompleteDeliveryDetailPageState extends State<CompleteDeliveryDetailPage>
   //定义一个全局变量接受response参数
   DeliveryDetail? deliveryDetails;
   final AuthApi _authApi = AuthApi();
+
+  //返回字符串 1返回本人签收 2返回自提签收 3返回其他签收
+  String _getSignatureType(String? signForType) {
+    switch (signForType) {
+      case '1':
+        return '本人签收';
+      case '2':
+        return '自提签收';
+      case '3':
+        return '其他签收';
+      default:
+        return '未知签收方式';
+    }
+  }
 
   @override
   void initState() {
@@ -126,8 +141,7 @@ class _CompleteDeliveryDetailPageState extends State<CompleteDeliveryDetailPage>
                         // 6. 签收方式
                         _buildInfoCard(
                           title: '签收方式',
-                          content:
-                              deliveryDetails?.signForType?.toString() ?? '',
+                          content:_getSignatureType(deliveryDetails?.signForType?.toString() ?? ''),
                           icon: Icons.confirmation_number,
                         ),
 
@@ -220,17 +234,75 @@ class _CompleteDeliveryDetailPageState extends State<CompleteDeliveryDetailPage>
       itemCount: imageList.length,
       itemBuilder: (context, index) {
         final String imageUrl = imageList[index];
-        return Image.network(imageUrl, fit: BoxFit.cover);
+        return _buildImageItem(imageUrl, index, imageList);
       },
     );
   }
 
+  // 构建可点击的图片项
+  Widget _buildImageItem(String imageUrl, int index, List<String> imageList) {
+    return GestureDetector(
+      onTap: () => showMultipleImagePreview(context, imageList, initialIndex: index, title: '签收图片'),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(8),
+        child: Image.network(
+          imageUrl,
+          fit: BoxFit.cover,
+          loadingBuilder: (context, child, loadingProgress) {
+            if (loadingProgress == null) return child;
+            return Center(
+              child: CircularProgressIndicator(
+                value: loadingProgress.expectedTotalBytes != null
+                    ? loadingProgress.cumulativeBytesLoaded / loadingProgress.expectedTotalBytes!
+                    : null,
+              ),
+            );
+          },
+          errorBuilder: (context, error, stackTrace) {
+            return Icon(
+              Icons.error,
+              color: Colors.red,
+              size: 40,
+            );
+          },
+        ),
+      ),
+    );
+  }
+
+  // 构建签字图片（支持点击预览）
   Widget _buildSignatureImage(String? signature) {
     final String url = signature ?? '';
     if (url.isEmpty) {
       return const Text('暂无签字');
     }
-    return Image.network(url, fit: BoxFit.contain);
+    return GestureDetector(
+      onTap: () => showSingleImagePreview(context, url, title: '客户签字'),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(8),
+        child: Image.network(
+          url,
+          fit: BoxFit.contain,
+          loadingBuilder: (context, child, loadingProgress) {
+            if (loadingProgress == null) return child;
+            return Center(
+              child: CircularProgressIndicator(
+                value: loadingProgress.expectedTotalBytes != null
+                    ? loadingProgress.cumulativeBytesLoaded / loadingProgress.expectedTotalBytes!
+                    : null,
+              ),
+            );
+          },
+          errorBuilder: (context, error, stackTrace) {
+            return Icon(
+              Icons.error,
+              color: Colors.red,
+              size: 40,
+            );
+          },
+        ),
+      ),
+    );
   }
 
   // 构建信息卡片
@@ -309,5 +381,4 @@ class _CompleteDeliveryDetailPageState extends State<CompleteDeliveryDetailPage>
       ),
     );
   }
-
 }
