@@ -220,7 +220,7 @@ class _PendingDeliveryDetailPageState extends State<PendingDeliveryDetail> {
                     // 图片上传区域
                     SizedBox(height: 8),
                     MultiImagePicker(
-                      maxCount: 6,
+                      maxCount: 3,
                       onImageUploaded: (imagePaths) {
                         _receiptImageUrls = imagePaths;
                         print('选中的图片: ${imagePaths}');

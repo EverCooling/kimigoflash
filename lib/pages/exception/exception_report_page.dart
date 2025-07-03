@@ -155,20 +155,18 @@ class _ExceptionReportPageState extends State<ExceptionReportPage> {
               SizedBox(height: 20),
 
               // 调用封装的异常描述组件
-              FormBuilder(
-                child: LimitedTextFormField(
-                  name: 'description',
-                  labelText: '异常描述',
-                  hintText: '请输入详细异常情况（最多200字）',
-                  maxLength: 200,
-                ),
+              LimitedTextFormField(
+                name: 'description',
+                labelText: '异常描述',
+                hintText: '请输入详细异常情况（最多200字）',
+                maxLength: 200,
               ),
 
               SizedBox(height: 20),
 
               // 图片上传
               MultiImagePicker(
-                maxCount: 6,
+                maxCount: 3,
                 onImageUploaded: (imagePaths) {
                   _receiptImageUrls = imagePaths;
                 },
