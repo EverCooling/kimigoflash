@@ -23,7 +23,7 @@ class _ExceptionReportPageState extends State<ExceptionReportPage> {
   final controller = Get.put(ExceptionReportController());
   List<String>? _receiptImageUrls;
   final AuthApi _authApi = AuthApi();
-  String? deliveryFailType;
+  String? deliveryFailType = '请选择异常原因'; // 默认值设置为提示文字
 
   final _formKey = GlobalKey<FormBuilderState>();
 
@@ -50,7 +50,8 @@ class _ExceptionReportPageState extends State<ExceptionReportPage> {
     final formData = _formKey.currentState!.value;
     print("表单数据: $formData");
 
-    if (deliveryFailType == null) {
+    if (deliveryFailType == '请选择异常原因') {
+      // 如果仍为默认值，从表单获取实际选择的值
       deliveryFailType = formData['deliveryFailType'];
     }
 
@@ -114,8 +115,9 @@ class _ExceptionReportPageState extends State<ExceptionReportPage> {
               // 异常原因选择
               FormBuilderField(
                 name: 'deliveryFailType',
+                initialValue: '请选择异常原因', // 设置表单初始值
                 validator: (value) {
-                  if (value == null || value.toString().isEmpty) {
+                  if (value == null || value.toString() == '请选择异常原因') {
                     return '请选择异常原因';
                   }
                   return null;
@@ -124,13 +126,15 @@ class _ExceptionReportPageState extends State<ExceptionReportPage> {
                   return CustomDropdownField(
                     name: 'deliveryFailType',
                     labelText: '请选择异常原因',
-                    items: controller.reasons,
+                    items: ['请选择异常原因'] + controller.reasons, // 选项列表添加默认提示
                     initialValue: field.value.toString(),
                     onTap: (context) async {
+                      // 过滤掉默认提示项再显示选项
+                      final filteredReasons = controller.reasons.where((reason) => reason != '请选择异常原因').toList();
                       final result = await SignMethodBottomSheet.show(
                         context,
-                        methods: controller.reasons,
-                        initialValue: field.value.toString(),
+                        methods: filteredReasons,
+                        initialValue: field.value.toString() == '请选择异常原因' ? null : field.value.toString(),
                         title: '选择异常原因',
                         titleStyle: TextStyle(fontSize: 20, color: Colors.blue),
                         selectedColor: Colors.blue,
@@ -148,7 +152,7 @@ class _ExceptionReportPageState extends State<ExceptionReportPage> {
                       return field.value.toString();
                     },
                     validator: (value) {
-                      return value == null || value.isEmpty ? '请输入异常原因' : null;
+                      return value == null || value == '请选择异常原因' ? '请选择异常原因' : null;
                     },
                   );
                 },
