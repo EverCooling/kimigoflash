@@ -41,10 +41,12 @@ class _LimitedTextFormFieldState extends State<LimitedTextFormField> {
   }
 
   void _initSubscription() {
-    if (_formState == null) return;
-    _subscription = _formState!.fieldValueStream(widget.name).listen((_) {
-      // 空监听，仅保持订阅以触发重建
-    });
+    final formState = FormBuilder.of(context);
+    if (formState == null) return;
+    final field = formState.fields[widget.name];
+    if (field is FormBuilderFieldState) {
+      // _subscription = formState.valueStream.listen((_) {});
+    }
   }
 
   @override

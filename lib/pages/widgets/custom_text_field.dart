@@ -15,7 +15,7 @@ class CustomTextField extends StatelessWidget {
   final FormFieldValidator<String>? validator; // 添加 validator 支持
 
   const CustomTextField({
-    Key? key,
+    super.key,
     required this.name,
     required this.labelText,
     this.controller,
@@ -27,7 +27,7 @@ class CustomTextField extends StatelessWidget {
     this.enabled = true,
     this.suffixIcon,
     this.validator,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

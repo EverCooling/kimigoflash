@@ -94,7 +94,7 @@ class _OutboundScanPageState extends State<OutboundScanPage> {
                   ),
                   SizedBox(height: 20),
                   CustomTextField(
-                    name: 'trackingNumber',
+                    name: 'kyInStorageNumber',
                     labelText: '扫描单号',
                     hintText: '请输入运单号',
                     controller: controller.scanController,

@@ -7,6 +7,7 @@ import 'package:kimiflash/theme/app_colors.dart';
 import 'package:loading_overlay/loading_overlay.dart';
 import 'package:intl/intl.dart';
 import 'package:liquid_pull_to_refresh/liquid_pull_to_refresh.dart';
+import '../widgets/custom_text_field.dart';
 import 'delivery_list_controller.dart';
 
 // 导入状态枚举
@@ -136,44 +137,25 @@ class _DeliveryListPageState extends State<DeliveryListPage> with SingleTickerPr
       color: Colors.grey[100],
       child: Row(
         children: [
-          // 搜索框 - 占据大部分宽度
-          Expanded(
-            child: TextField(
-              controller: _searchController,
-              decoration: InputDecoration(
-                hintText: '搜索订单号、收件人...',
-                prefixIcon: Icon(Icons.search, color: AppColors.redGradient[400]),
-                suffixIcon: _searchText.isNotEmpty
-                    ? IconButton(
-                  icon: Icon(Icons.clear),
-                  onPressed: () {
-                    setState(() {
-                      _searchText = '';
-                      _searchController.clear();
-                    });
-                    _fetchOrders(_getStatus(controller.tabController.index), isRefresh: true);
-                  },
-                )
-                    : null,
-                // 设置红色边框 - 修复未聚焦时边框颜色不生效的问题
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
-                  borderSide: BorderSide.none, // 默认无边框（被其他状态覆盖）
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
-                  borderSide: BorderSide(color: Colors.red), // 未聚焦时的红色边框
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
-                  borderSide: BorderSide(color: Colors.red.shade700), // 聚焦时的深红色边框
-                ),
-                contentPadding: EdgeInsets.symmetric(vertical: 11, horizontal: 16), // 高度约42
-              ),
-              onChanged: (value) => _searchText = value,
-              onSubmitted: (value) => _fetchOrders(_getStatus(controller.tabController.index), isRefresh: true),
-            ),
-          ),
+          Expanded(child: CustomTextField(
+            name: 'kyInStorageNumber',
+            labelText: '搜索订单号、收件人...',
+            hintText: '搜索订单号、收件人...',
+            controller: _searchController,
+            prefixIcon: Icons.search,
+            suffixIcon: Icons.barcode_reader,
+            onSuffixPressed: () async {
+              final barcodeResult = await Get.toNamed('/scanner');
+              if (barcodeResult != null) {
+                await _fetchOrders(_getStatus(controller.tabController.index), isRefresh: true);
+              }
+            },
+            onSubmitted: (value) async {
+              if (value != null) {
+                await _fetchOrders(_getStatus(controller.tabController.index), isRefresh: true);
+              }
+            },
+          )),
           // 间隔
           SizedBox(width: 10),
           // 时间选择按钮 - 固定宽度
