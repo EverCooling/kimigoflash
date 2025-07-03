@@ -44,6 +44,11 @@ class DeliveryListItem extends StatelessWidget {
               title: Row(
                 children: [
                   Text('单号：${item['kyInStorageNumber'] ?? ''}'),
+                  const SizedBox(width: 10),
+                  GestureDetector(
+                    onTap: () => _copyNumber(context),
+                    child: Icon(Icons.content_copy, size: 18, color: AppColors.redGradient[500]),
+                  ),
                   const Spacer(),
                   _buildStatusBadge(),
                 ],
@@ -67,16 +72,11 @@ class DeliveryListItem extends StatelessWidget {
                   Row(children: [
                     Icon(Icons.phone_outlined, size: 16, color: Colors.red),
                     const SizedBox(width: 4),
-                    Text('电话：${item['recipientPhone'] ?? ''}'),
+                    Text('电话：${item['recipietnMobile'] ?? ''}'),
                     const Spacer(),
                     GestureDetector(
                       onTap: () => _callPhoneNumber(context),
                       child: Icon(Icons.call, size: 18, color: AppColors.redGradient[500]),
-                    ),
-                    const SizedBox(width: 10),
-                    GestureDetector(
-                      onTap: () => _copyPhoneNumber(context),
-                      child: Icon(Icons.content_copy, size: 18, color: AppColors.redGradient[500]),
                     ),
                   ]),
                   const SizedBox(height: 10),
@@ -214,14 +214,14 @@ class DeliveryListItem extends StatelessWidget {
     else ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('无法拨打电话: $phoneNumber')));
   }
 
-  void _copyPhoneNumber(BuildContext context) {
-    final phoneNumber = item['recipientPhone'] ?? '';
+  void _copyNumber(BuildContext context) {
+    final phoneNumber = item['kyInStorageNumber'] ?? '';
     if (phoneNumber.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('电话号码为空')));
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('单号为空')));
       return;
     }
     Clipboard.setData(ClipboardData(text: phoneNumber));
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('已复制电话号码: $phoneNumber')));
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('已复制单号: $phoneNumber')));
   }
 
   void _showMapOptions(BuildContext context) {

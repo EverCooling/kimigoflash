@@ -1,4 +1,5 @@
 
+
 import 'package:flutter/material.dart';
 import 'package:flutter_form_builder/flutter_form_builder.dart';
 
@@ -12,6 +13,7 @@ class CustomTextField extends StatelessWidget {
   final TextEditingController? controller;
   final IconData? suffixIcon;
   final FormFieldValidator<String>? validator;
+  final bool enabled;
 
   const CustomTextField({
     super.key,
@@ -24,7 +26,7 @@ class CustomTextField extends StatelessWidget {
     this.onSubmitted,
     this.suffixIcon,
     this.validator,
-    required bool enabled,
+    this.enabled = true,
   });
 
   @override
@@ -33,6 +35,7 @@ class CustomTextField extends StatelessWidget {
       name: name,
       validator: validator,
       controller: controller,
+      enabled: enabled,
       decoration: InputDecoration(
         labelText: labelText,
         hintText: hintText,
