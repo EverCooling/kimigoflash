@@ -273,7 +273,7 @@ class _DeliveryListPageState extends State<DeliveryListPage> with SingleTickerPr
             });
             break;
           case DeliveryStatus.unknown:
-            // TODO: Handle this case.
+          // TODO: Handle this case.
             throw UnimplementedError();
         }
       } else {
@@ -339,7 +339,7 @@ class _DeliveryListPageState extends State<DeliveryListPage> with SingleTickerPr
             });
             break;
           case DeliveryStatus.unknown:
-            // TODO: Handle this case.
+          // TODO: Handle this case.
             throw UnimplementedError();
         }
       } else {
@@ -418,9 +418,12 @@ class _DeliveryListPageState extends State<DeliveryListPage> with SingleTickerPr
       backgroundColor: Colors.white,
       child: ListView.builder(
         controller: _scrollController,
-        itemCount: orders.length + (_isLoadingMore || _hasMoreData ? 1 : 0),
+        itemCount: orders.isEmpty && !_isRefreshing ? 1 : orders.length + (_isLoadingMore || _hasMoreData ? 1 : 0),
         itemBuilder: (context, index) {
-          if (index < orders.length) {
+          if (orders.isEmpty && !_isRefreshing) {
+            // 显示空数据状态
+            return _buildEmptyState(status);
+          } else if (index < orders.length) {
             // 显示数据项 - 传递对应的DeliveryStatus
             final order = orders[index];
             return DeliveryListItem(
@@ -433,6 +436,58 @@ class _DeliveryListPageState extends State<DeliveryListPage> with SingleTickerPr
             return _buildLoadingIndicator();
           }
         },
+      ),
+    );
+  }
+
+  // 构建空数据状态UI
+  Widget _buildEmptyState(DeliveryStatus status) {
+    String emptyText = '';
+    IconData emptyIcon = Icons.hourglass_empty_outlined;
+
+    // 根据不同状态显示不同的空状态提示
+    switch (status) {
+      case DeliveryStatus.pending:
+        emptyText = '暂无待派件';
+        break;
+      case DeliveryStatus.delivered:
+        emptyText = '暂无已派件';
+        break;
+      case DeliveryStatus.failed:
+        emptyText = '暂无派件失败记录';
+        break;
+      case DeliveryStatus.unknown:
+        emptyText = '暂无数据';
+        break;
+    }
+
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            emptyIcon,
+            size: 80,
+            color: AppColors.redGradient[200],
+          ),
+          const SizedBox(height: 20),
+          Text(
+            emptyText,
+            style: TextStyle(
+              fontSize: 18,
+              color: Colors.grey[500],
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          const SizedBox(height: 10),
+          Text(
+            '请尝试更换筛选条件或稍后再试',
+            style: TextStyle(
+              fontSize: 14,
+              color: Colors.grey[400],
+            ),
+          ),
+        ],
       ),
     );
   }
