@@ -155,9 +155,13 @@ class _ExceptionReportPageState extends State<ExceptionReportPage> {
               SizedBox(height: 20),
 
               // 调用封装的异常描述组件
-              ExceptionDescriptionField(
-                name: 'failTitle',
-                maxLength: 200,
+              FormBuilder(
+                child: LimitedTextFormField(
+                  name: 'description',
+                  labelText: '异常描述',
+                  hintText: '请输入详细异常情况（最多200字）',
+                  maxLength: 200,
+                ),
               ),
 
               SizedBox(height: 20),
