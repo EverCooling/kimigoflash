@@ -18,6 +18,7 @@ class CustomDropdownField extends StatelessWidget {
     required this.onTap,
     this.initialValue,
     this.onIndexChanged,
+    required String? Function(dynamic value) validator,
   }) : super(key: key);
 
   @override

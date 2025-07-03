@@ -161,6 +161,11 @@ class _ExceptionReportPageState extends State<ExceptionReportPage> {
                         return result['value'];
                       }
                       return field.value;
+                    }, validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return '请选择签收方式';
+                      }
+                      return null;
                     },
                   );
                 },

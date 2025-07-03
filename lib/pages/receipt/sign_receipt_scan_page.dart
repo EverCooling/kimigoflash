@@ -1,26 +1,16 @@
-import 'dart:io';
-import 'dart:typed_data';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_form_builder/flutter_form_builder.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:get/get.dart';
-import 'package:get/get_core/src/get_main.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:kimiflash/pages/receipt/sign_receipt_scan_controller.dart';
 import 'package:kimiflash/pages/widgets/loading_manager.dart';
-import 'package:kimiflash/pages/widgets/multi_album_picker_field.dart';
 import 'package:kimiflash/pages/widgets/signature_preview.dart';
-import 'package:riverpod/src/framework.dart';
 import '../../http/api/auth_api.dart';
 import '../widgets/custom_dropdown_field.dart';
 import '../widgets/custom_text_field.dart';
 import '../widgets/multi_image_picker.dart';
 import '../widgets/sign_method_bottom_sheet.dart';
-import '../widgets/signature_pad.dart';
-import '../widgets/signature_preview.dart';
-import 'package:loading_overlay/loading_overlay.dart';
-import 'package:permission_handler/permission_handler.dart';
 
 class SignReceiptScanPage extends StatefulWidget {
   const SignReceiptScanPage({Key? key}) : super(key: key);
@@ -29,14 +19,12 @@ class SignReceiptScanPage extends StatefulWidget {
   State<SignReceiptScanPage> createState() => _SignReceiptScanPageState();
 }
 
-
 class _SignReceiptScanPageState extends State<SignReceiptScanPage> {
   final _formKey = GlobalKey<FormBuilderState>();
   final controller = Get.put(SignReceiptScanController());
   String? _uploadedImage;
   final ImagePicker _picker = ImagePicker();
   String _statusMessage = '请在下方签名';
-  String _kyInStorageNumber = '';
   List<String>? _receiptImageUrls;
   String? _signatureImageUrl;
 
@@ -84,8 +72,17 @@ class _SignReceiptScanPageState extends State<SignReceiptScanPage> {
       try {
         // 获取表单值
         final Map<String, dynamic> formData = form!.value;
-        final String kyInStorageNumber = formData['kyInStorageNumber'] ?? '';
+        // 从表单中获取订单号（注意：这里使用正确的表单字段名）
+        final String kyInStorageNumber = formData['trackingNumber'] ?? '';
         final String signMethod = formData['signMethod'] ?? '';
+
+        // 验证订单号是否存在
+        if (kyInStorageNumber.isEmpty) {
+          Get.snackbar('错误', '请输入或扫描订单号');
+          return;
+        }
+
+        print('提交的订单号: $kyInStorageNumber'); // 调试输出
 
         HUD.show(context);
         // 调用API提交数据
@@ -99,6 +96,8 @@ class _SignReceiptScanPageState extends State<SignReceiptScanPage> {
 
         if (response.code == 200) {
           Get.snackbar('成功', '签收成功');
+          // 签收成功后可以返回上一页
+          Navigator.of(context).pop();
         } else {
           Get.snackbar('失败', response.msg ?? '验证失败');
         }
@@ -109,9 +108,10 @@ class _SignReceiptScanPageState extends State<SignReceiptScanPage> {
       }
     } else {
       print('表单验证失败');
+      // 显示验证错误信息
+      Get.snackbar('错误', '请检查表单输入');
     }
   }
-
 
   @override
   Widget build(BuildContext context) {
@@ -146,12 +146,18 @@ class _SignReceiptScanPageState extends State<SignReceiptScanPage> {
                       onSubmitted: (value) async {
                         if (value != null) await _verifyOrder(value);
                       },
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return '请输入或扫描订单号';
+                        }
+                        return null;
+                      },
                     ),
                     SizedBox(height: 20),
 
                     CustomDropdownField(
                       name: 'signMethod',
-                      labelText: '请选择异常原因',
+                      labelText: '签收方式',
                       items: controller.methods,
                       initialValue: null,
                       onTap: (context) async {
@@ -159,7 +165,7 @@ class _SignReceiptScanPageState extends State<SignReceiptScanPage> {
                           context,
                           methods: controller.methods,
                           initialValue: null,
-                          title: '选择派件方式',
+                          title: '选择签收方式',
                           titleStyle: TextStyle(fontSize: 20, color: Colors.blue),
                           selectedColor: Colors.blue,
                           shape: RoundedRectangleBorder(
@@ -174,10 +180,14 @@ class _SignReceiptScanPageState extends State<SignReceiptScanPage> {
                           ],
                         );
                         if (result != null) {
-                          print('报巴巴啦 ====== ');
-
-                          print(result['value']);
+                          print('选择的签收方式: ${result['value']}');
                           return result['value'];
+                        }
+                        return null;
+                      },
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return '请选择签收方式';
                         }
                         return null;
                       },
@@ -199,10 +209,10 @@ class _SignReceiptScanPageState extends State<SignReceiptScanPage> {
                     // 客户签字板
                     SignaturePreview(
                       onSignatureChanged: (url) async {
-                        print("客户签字");
+                        print("客户签字: $url");
                         setState(() {
                           _signatureImageUrl = url;
-                          _signatureImageUrl = url == null
+                          _statusMessage = url == null
                               ? '签名已清除，请重新签名'
                               : '签名已完成';
                         });
@@ -219,11 +229,7 @@ class _SignReceiptScanPageState extends State<SignReceiptScanPage> {
           Padding(
             padding: EdgeInsets.all(16.0),
             child: ElevatedButton(
-              onPressed: () {
-                print('提交按钮点击'); // 调试输出
-                _submit();
-
-              },
+              onPressed: _submit,
               style: ElevatedButton.styleFrom(
                 minimumSize: Size(double.infinity, 50),
               ),

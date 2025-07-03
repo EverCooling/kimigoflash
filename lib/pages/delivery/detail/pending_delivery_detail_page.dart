@@ -210,6 +210,8 @@ class _PendingDeliveryDetailPageState extends State<PendingDeliveryDetail> {
                           return result['value'];
                         }
                         return null;
+                      }, validator: (value) {
+                        return value == null ? '请选择签收方式' : null;
                       },
                     ),
                     const SizedBox(height: 16),
