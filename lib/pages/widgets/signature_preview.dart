@@ -28,12 +28,10 @@ class _SignaturePreviewState extends State<SignaturePreview> {
                 child: SyncfusionSignaturePadWidget(
                   onUploadSuccess: (url) {
                     Navigator.of(context).pop(url);
-                    print("输入结果===={$url}");
+                    print("签名上传成功: $url");
                   },
                 ),
               ),
-              // const SizedBox(height: 16),
-              // Text('请在上方签名'),
             ],
           ),
         ),
@@ -44,7 +42,7 @@ class _SignaturePreviewState extends State<SignaturePreview> {
       setState(() {
         _signatureUrl = result;
       });
-      widget.onSignatureChanged?.call(_signatureUrl); // 添加这行
+      widget.onSignatureChanged?.call(_signatureUrl);
     }
   }
 
@@ -52,6 +50,23 @@ class _SignaturePreviewState extends State<SignaturePreview> {
     setState(() {
       _signatureUrl = null;
     });
+  }
+
+  void _viewLargeImage() {
+    if (_signatureUrl != null) {
+      showDialog(
+        context: context,
+        builder: (context) => Dialog(
+          child: Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: Image.network(
+              _signatureUrl!,
+              fit: BoxFit.contain,
+            ),
+          ),
+        ),
+      );
+    }
   }
 
   @override
@@ -62,7 +77,7 @@ class _SignaturePreviewState extends State<SignaturePreview> {
         Text('客户签字板', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
         SizedBox(height: 8),
         InkWell(
-          onTap: () => _showSignatureDialog(context),
+          onTap: _signatureUrl != null ? _viewLargeImage : () => _showSignatureDialog(context),
           child: Container(
             width: double.infinity,
             height: 150,
@@ -73,7 +88,11 @@ class _SignaturePreviewState extends State<SignaturePreview> {
             ),
             child: _signatureUrl == null
                 ? Center(child: Text('点击此处签名', style: TextStyle(color: Colors.grey)))
-                : Image.network(_signatureUrl!),
+                : Image.network(
+              _signatureUrl!,
+              fit: BoxFit.contain,
+              errorBuilder: (context, error, stackTrace) => Center(child: Text('图片加载失败', style: TextStyle(color: Colors.grey))),
+            ),
           ),
         ),
         if (_signatureUrl != null)

@@ -137,8 +137,8 @@ class _DeliveryListPageState extends State<DeliveryListPage> with SingleTickerPr
               child: CustomTextField(
                 name: 'searchQuery',
                 enabled: true,
-                labelText: '搜索订单号、收件人...',
-                hintText: '搜索订单号、收件人...',
+                labelText: '收件人/电话/地址/自提点',
+                hintText: '收件人/电话/地址/自提点',
                 prefixIcon: Icons.search,
                 suffixIcon: Icons.barcode_reader,
                 onSuffixPressed: () async {
