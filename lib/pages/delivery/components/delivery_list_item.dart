@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart'; // 新增：用于HapticFeedback
 import 'package:kimiflash/theme/app_colors.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -12,13 +13,13 @@ enum DeliveryStatus {
 class DeliveryListItem extends StatelessWidget {
   final Map<String, dynamic> item;
   final VoidCallback onTap;
-  final DeliveryStatus status; // 新增：外部状态变量
+  final DeliveryStatus status;
 
   const DeliveryListItem({
     Key? key,
     required this.item,
     required this.onTap,
-    required this.status, // 状态作为必选参数
+    required this.status,
   }) : super(key: key);
 
   @override
@@ -33,10 +34,13 @@ class DeliveryListItem extends StatelessWidget {
           contentPadding: const EdgeInsets.symmetric(horizontal: 16),
           title: Row(
             children: [
-              // 单号文本
               Text('单号：${item['kyInStorageNumber'] ?? ''}'),
-              // 状态图标（右上角）
               const Spacer(),
+              // 新增：复制电话图标按钮
+              GestureDetector(
+                onTap: () => _copyPhoneNumber(context),
+                child: Icon(Icons.content_copy, color: AppColors.redGradient[500]),
+              ),
               _buildStatusBadge(),
             ],
           ),
@@ -54,6 +58,19 @@ class DeliveryListItem extends StatelessWidget {
                 Icon(Icons.person_outline, size: 16, color: Colors.red),
                 const SizedBox(width: 4),
                 Text('收件人：${item['recipientName'] ?? ''}'),
+              ]),
+              // 新增：电话显示行
+              const SizedBox(height: 10),
+              Row(children: [
+                Icon(Icons.phone_outlined, size: 16, color: Colors.red),
+                const SizedBox(width: 4),
+                Text('电话：${item['recipietnMobile'] ?? ''}'),
+                const Spacer(),
+                // 新增：电话图标按钮
+                GestureDetector(
+                  onTap: () => _callPhoneNumber(context),
+                  child: Icon(Icons.call, color: AppColors.redGradient[500]),
+                ),
               ]),
               const SizedBox(height: 10),
               Row(children: [
@@ -78,11 +95,10 @@ class DeliveryListItem extends StatelessWidget {
     );
   }
 
-  // 构建状态徽章（基于外部状态变量）
+  // 构建状态徽章
   Widget _buildStatusBadge() {
     switch (status) {
       case DeliveryStatus.pending:
-      // 待派状态：圆形橙色背景，时钟图标
         return Container(
           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
           decoration: BoxDecoration(
@@ -99,7 +115,6 @@ class DeliveryListItem extends StatelessWidget {
           ),
         );
       case DeliveryStatus.delivered:
-      // 已派状态：圆形绿色背景，勾选图标
         return Container(
           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
           decoration: BoxDecoration(
@@ -116,7 +131,6 @@ class DeliveryListItem extends StatelessWidget {
           ),
         );
       case DeliveryStatus.failed:
-      // 失败状态：圆形红色背景，错误图标
         return Container(
           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
           decoration: BoxDecoration(
@@ -134,7 +148,6 @@ class DeliveryListItem extends StatelessWidget {
         );
       case DeliveryStatus.unknown:
       default:
-      // 未知状态：灰色背景
         return Container(
           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
           decoration: BoxDecoration(
@@ -144,6 +157,51 @@ class DeliveryListItem extends StatelessWidget {
           child: const Text('未知', style: TextStyle(fontSize: 12, color: Colors.black54)),
         );
     }
+  }
+
+  // 新增：拨打电话功能
+  void _callPhoneNumber(BuildContext context) {
+    final phoneNumber = item['recipietnMobile'] ?? '';
+
+    if (phoneNumber.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('电话号码为空'))
+      );
+      return;
+    }
+
+    // 添加点击反馈
+    HapticFeedback.lightImpact();
+
+    // 调用系统拨号功能
+    final uri = Uri.parse('tel:$phoneNumber');
+    if (canLaunchUrl(uri) as bool) {
+      launchUrl(uri);
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('无法拨打电话: $phoneNumber'))
+      );
+    }
+  }
+
+  // 新增：复制电话号码功能
+  void _copyPhoneNumber(BuildContext context) {
+    final phoneNumber = item['kyInStorageNumber'] ?? '';
+
+    if (phoneNumber.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('电话号码为空'))
+      );
+      return;
+    }
+
+    // 复制到剪贴板
+    Clipboard.setData(ClipboardData(text: phoneNumber));
+
+    // 显示成功提示
+    ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('已复制电话号码: $phoneNumber'))
+    );
   }
 
   void _showMapOptions(BuildContext context) {
