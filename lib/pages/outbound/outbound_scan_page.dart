@@ -127,6 +127,7 @@ class _OutboundScanPageState extends State<OutboundScanPage> {
                     CustomTextField(
                       name: 'courier',
                       labelText: '所属派件员',
+                      hintText: '',
                       controller: controller.courierController,
                       enabled: false,
                       prefixIcon: Icons.person_outline,

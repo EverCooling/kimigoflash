@@ -13,9 +13,9 @@ import '../widgets/multi_image_picker.dart';
 import '../widgets/sign_method_bottom_sheet.dart';
 
 class SignReceiptScanPage extends StatefulWidget {
-  final Map<String, dynamic> deliveryItem;
+  final Map<String, dynamic>? deliveryItem; // 修改为可选参数
 
-  const SignReceiptScanPage({Key? key, required this.deliveryItem}) : super(key: key);
+  const SignReceiptScanPage({Key? key, this.deliveryItem}) : super(key: key);
 
   @override
   State<SignReceiptScanPage> createState() => _SignReceiptScanPageState();
@@ -31,6 +31,47 @@ class _SignReceiptScanPageState extends State<SignReceiptScanPage> {
   String? _signatureImageUrl;
 
   final AuthApi _authApi = AuthApi();
+
+  @override
+  void initState() {
+    super.initState();
+    // 检查是否有传递deliveryItem参数，并填充表单
+    if (widget.deliveryItem != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _fillFormData(widget.deliveryItem!);
+      });
+    }
+  }
+
+  // 填充表单数据
+  void _fillFormData(Map<String, dynamic> data) {
+    final formState = _formKey.currentState;
+    if (formState == null) return;
+
+    // 从deliveryItem中提取数据并填充表单
+    if (data.containsKey('kyInStorageNumber')) {
+      formState.fields['trackingNumber']?.didChange(data['kyInStorageNumber']);
+    }
+
+    // 可选：如果deliveryItem包含签收方式，也可以填充
+    if (data.containsKey('signForType')) {
+      final signForType = data['signForType'];
+      final signMethod = _getSignMethodFromType(signForType);
+      if (signMethod != null) {
+        formState.fields['signMethod']?.didChange(signMethod);
+      }
+    }
+  }
+
+  // 根据签收类型值获取对应的签收方式文本
+  String? _getSignMethodFromType(int? type) {
+    switch (type) {
+      case 1: return '本人签收';
+      case 2: return '自提签收';
+      case 3: return '其他签收';
+      default: return null;
+    }
+  }
 
   Future<void> _verifyOrder(String orderNumber) async {
     HUD.show(context);
