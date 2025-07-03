@@ -9,6 +9,9 @@ import 'package:intl/intl.dart';
 import 'package:liquid_pull_to_refresh/liquid_pull_to_refresh.dart';
 import 'delivery_list_controller.dart';
 
+// 导入状态枚举
+import 'package:kimiflash/pages/delivery/components/delivery_list_item.dart' show DeliveryStatus;
+
 class DeliveryListPage extends StatefulWidget {
   @override
   State<DeliveryListPage> createState() => _DeliveryListPageState();
@@ -26,7 +29,7 @@ class _DeliveryListPageState extends State<DeliveryListPage> with SingleTickerPr
   List<dynamic> _failedList = [];    // 派件失败
   bool _tabIsSelected = false;
   String _searchText = '';
-  String? _deliveryDays =  ''; // 派送方式
+  String? _deliveryDays = ''; // 派送方式
   final TextEditingController _searchController = TextEditingController();
   late ScrollController _scrollController; // 滚动控制器，用于监听上拉加载
   int _currentPage = 1; // 当前页码
@@ -61,6 +64,7 @@ class _DeliveryListPageState extends State<DeliveryListPage> with SingleTickerPr
   }
 
   _handleChange() {
+    print("打印tab选中值 ======== ${_tabIsSelected}");
     if (_tabIsSelected) return;
     _tabIsSelected = true;
 
@@ -72,17 +76,17 @@ class _DeliveryListPageState extends State<DeliveryListPage> with SingleTickerPr
     }
   }
 
-  // index ==0 返回22，index === 1返回24，index==2 返回23
-  int _getStatus(int index) {
+  // index ==0 返回DeliveryStatus.pending，index == 1返回DeliveryStatus.delivered，index==2 返回DeliveryStatus.failed
+  DeliveryStatus _getStatus(int index) {
     switch (index) {
       case 0:
-        return 22; // 待派件
+        return DeliveryStatus.pending; // 待派件
       case 1:
-        return 23; // 已派件
+        return DeliveryStatus.delivered; // 已派件
       case 2:
-        return 24; // 派件失败
+        return DeliveryStatus.failed; // 派件失败
       default:
-        return 22;
+        return DeliveryStatus.pending;
     }
   }
 
@@ -226,7 +230,7 @@ class _DeliveryListPageState extends State<DeliveryListPage> with SingleTickerPr
   }
 
   // 加载更多数据
-  Future<void> _fetchMoreOrders(int status) async {
+  Future<void> _fetchMoreOrders(DeliveryStatus status) async {
     if (_isLoadingMore || !_hasMoreData) return;
 
     setState(() {
@@ -236,7 +240,7 @@ class _DeliveryListPageState extends State<DeliveryListPage> with SingleTickerPr
     try {
       final nextPage = _currentPage + 1;
       final response = await _authApi.DeliverManQueryDeliveryList({
-        "orderStatus": status,
+        "orderStatus": _getStatusCode(status), // 转换为API需要的状态码
         "customerCode": "10010",
         "deliveryContent": _searchText,
         "deliveryDays": _getDeliveryDays(_deliveryDays),
@@ -250,24 +254,27 @@ class _DeliveryListPageState extends State<DeliveryListPage> with SingleTickerPr
 
         // 根据状态更新对应的列表
         switch (status) {
-          case 22:
+          case DeliveryStatus.pending:
             setState(() {
               _pendingList.addAll(newData);
               _hasMoreData = newData.length == _pageSize;
             });
             break;
-          case 23:
+          case DeliveryStatus.delivered:
             setState(() {
               _completedList.addAll(newData);
               _hasMoreData = newData.length == _pageSize;
             });
             break;
-          case 24:
+          case DeliveryStatus.failed:
             setState(() {
               _failedList.addAll(newData);
               _hasMoreData = newData.length == _pageSize;
             });
             break;
+          case DeliveryStatus.unknown:
+            // TODO: Handle this case.
+            throw UnimplementedError();
         }
       } else {
         Get.snackbar('加载失败', response.msg ?? '未知错误');
@@ -282,7 +289,7 @@ class _DeliveryListPageState extends State<DeliveryListPage> with SingleTickerPr
   }
 
   // 获取订单列表
-  Future<void> _fetchOrders(int status, {bool isRefresh = false}) async {
+  Future<void> _fetchOrders(DeliveryStatus status, {bool isRefresh = false}) async {
     print("_fetchOrders--------------------------------${_searchText}");
     if (_isRequesting) return;
 
@@ -299,7 +306,7 @@ class _DeliveryListPageState extends State<DeliveryListPage> with SingleTickerPr
 
     try {
       final response = await _authApi.DeliverManQueryDeliveryList({
-        "orderStatus": status,
+        "orderStatus": _getStatusCode(status), // 转换为API需要的状态码
         "customerCode": "10010",
         "deliveryContent": _searchText,
         "deliveryDays": _getDeliveryDays(_deliveryDays),
@@ -313,24 +320,27 @@ class _DeliveryListPageState extends State<DeliveryListPage> with SingleTickerPr
 
         // 根据状态更新对应的列表
         switch (status) {
-          case 22:
+          case DeliveryStatus.pending:
             setState(() {
               _pendingList = isRefresh ? data : _pendingList;
               _hasMoreData = data.length == _pageSize;
             });
             break;
-          case 23:
+          case DeliveryStatus.delivered:
             setState(() {
               _completedList = isRefresh ? data : _completedList;
               _hasMoreData = data.length == _pageSize;
             });
             break;
-          case 24:
+          case DeliveryStatus.failed:
             setState(() {
               _failedList = isRefresh ? data : _failedList;
               _hasMoreData = data.length == _pageSize;
             });
             break;
+          case DeliveryStatus.unknown:
+            // TODO: Handle this case.
+            throw UnimplementedError();
         }
       } else {
         Get.snackbar('加载失败', response.msg ?? '未知错误');
@@ -347,6 +357,20 @@ class _DeliveryListPageState extends State<DeliveryListPage> with SingleTickerPr
         _isRequesting = false;
       }
       _tabIsSelected = false;
+    }
+  }
+
+  // 将DeliveryStatus转换为API所需的状态码
+  int _getStatusCode(DeliveryStatus status) {
+    switch (status) {
+      case DeliveryStatus.pending:
+        return 22;
+      case DeliveryStatus.delivered:
+        return 23;
+      case DeliveryStatus.failed:
+        return 24;
+      default:
+        return 22;
     }
   }
 
@@ -371,12 +395,12 @@ class _DeliveryListPageState extends State<DeliveryListPage> with SingleTickerPr
             child: TabBarView(
               controller: controller.tabController,
               children: [
-                // 待派件
-                _buildRefreshableList(_pendingList, 'pending'),
-                // 已派件
-                _buildRefreshableList(_completedList, 'completed'),
-                // 派件失败
-                _buildRefreshableList(_failedList, 'failed'),
+                // 待派件 - 传递DeliveryStatus.pending
+                _buildRefreshableList(_pendingList, DeliveryStatus.pending),
+                // 已派件 - 传递DeliveryStatus.delivered
+                _buildRefreshableList(_completedList, DeliveryStatus.delivered),
+                // 派件失败 - 传递DeliveryStatus.failed
+                _buildRefreshableList(_failedList, DeliveryStatus.failed),
               ],
             ),
           ),
@@ -386,7 +410,7 @@ class _DeliveryListPageState extends State<DeliveryListPage> with SingleTickerPr
   }
 
   // 构建可刷新的列表
-  Widget _buildRefreshableList(List<dynamic> orders, String type) {
+  Widget _buildRefreshableList(List<dynamic> orders, DeliveryStatus status) {
     return LiquidPullToRefresh(
       onRefresh: _handleRefresh,
       showChildOpacityTransition: false,
@@ -397,11 +421,12 @@ class _DeliveryListPageState extends State<DeliveryListPage> with SingleTickerPr
         itemCount: orders.length + (_isLoadingMore || _hasMoreData ? 1 : 0),
         itemBuilder: (context, index) {
           if (index < orders.length) {
-            // 显示数据项
+            // 显示数据项 - 传递对应的DeliveryStatus
             final order = orders[index];
             return DeliveryListItem(
               item: order,
-              onTap: () => controller.navigateToDetail(order, type),
+              onTap: () => controller.navigateToDetail(order, status.toString()),
+              status: status, // 传递当前Tab对应的状态
             );
           } else {
             // 显示加载更多指示器
