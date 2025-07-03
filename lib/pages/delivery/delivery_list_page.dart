@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_form_builder/flutter_form_builder.dart';
 import 'package:get/get.dart';
 import 'package:kimiflash/http/api/auth_api.dart';
 import 'package:kimiflash/pages/delivery/components/delivery_list_item.dart';
@@ -22,19 +23,20 @@ class _DeliveryListPageState extends State<DeliveryListPage> with SingleTickerPr
   final AuthApi _authApi = AuthApi();
   final controller = Get.put(DeliveryListController());
   bool _isRequesting = false;
-  bool _isRefreshing = false; // 下拉刷新状态
-  bool _isLoadingMore = false; // 上拉加载状态
-  bool _hasMoreData = true; // 是否还有更多数据
-  List<dynamic> _pendingList = [];   // 待派件
-  List<dynamic> _completedList = []; // 已派件
-  List<dynamic> _failedList = [];    // 派件失败
+  bool _isRefreshing = false;
+  bool _isLoadingMore = false;
+  bool _hasMoreData = true;
+  List<dynamic> _pendingList = [];
+  List<dynamic> _completedList = [];
+  List<dynamic> _failedList = [];
   bool _tabIsSelected = false;
-  String _searchText = '';
-  String? _deliveryDays = ''; // 派送方式
-  final TextEditingController _searchController = TextEditingController();
-  late ScrollController _scrollController; // 滚动控制器，用于监听上拉加载
-  int _currentPage = 1; // 当前页码
-  final int _pageSize = 10; // 每页数量
+  String? _deliveryDays;
+  late ScrollController _scrollController;
+  int _currentPage = 1;
+  final int _pageSize = 10;
+
+  // 表单键，用于获取表单数据
+  final _formKey = GlobalKey<FormBuilderState>();
 
   @override
   void initState() {
@@ -48,16 +50,13 @@ class _DeliveryListPageState extends State<DeliveryListPage> with SingleTickerPr
 
   @override
   void dispose() {
-    _searchController.dispose();
     _scrollController.dispose();
     super.dispose();
   }
 
-  // 处理滚动事件，实现上拉加载
   void _handleScroll() {
     if (_isLoadingMore || !_hasMoreData) return;
 
-    // 当滚动到距离底部200像素时触发加载更多
     if (_scrollController.position.pixels >=
         _scrollController.position.maxScrollExtent - 200) {
       _fetchMoreOrders(_getStatus(controller.tabController.index));
@@ -65,47 +64,44 @@ class _DeliveryListPageState extends State<DeliveryListPage> with SingleTickerPr
   }
 
   _handleChange() {
-    print("打印tab选中值 ======== ${_tabIsSelected}");
     if (_tabIsSelected) return;
     _tabIsSelected = true;
 
     if (controller.tabController.indexIsChanging) {
-      _clearFilters(); // 切换标签时重置筛选条件
-      _currentPage = 1; // 重置页码
-      _hasMoreData = true; // 重置是否有更多数据标记
+      _clearFilters();
+      _currentPage = 1;
+      _hasMoreData = true;
       Future.microtask(() => _fetchOrders(_getStatus(controller.tabController.index), isRefresh: true));
     }
   }
 
-  // index ==0 返回DeliveryStatus.pending，index == 1返回DeliveryStatus.delivered，index==2 返回DeliveryStatus.failed
   DeliveryStatus _getStatus(int index) {
     switch (index) {
       case 0:
-        return DeliveryStatus.pending; // 待派件
+        return DeliveryStatus.pending;
       case 1:
-        return DeliveryStatus.delivered; // 已派件
+        return DeliveryStatus.delivered;
       case 2:
-        return DeliveryStatus.failed; // 派件失败
+        return DeliveryStatus.failed;
       default:
         return DeliveryStatus.pending;
     }
   }
 
-  // 清除筛选条件
   void _clearFilters() {
+    if (_formKey.currentState != null) {
+      _formKey.currentState!.reset(); // 重置表单
+    }
     setState(() {
-      _searchText = '';
-      _searchController.text = '';
       _deliveryDays = '';
     });
   }
 
-  // 显示派送方式选择器
   Future<void> _showDeliveryMethodSelector(BuildContext context) async {
-    final List<String> methods = ['全部','当天', '三天内', '五天内','七天内'];
+    final List<String> methods = ['全部', '当天', '三天内', '五天内', '七天内'];
     final String? result = await showModalBottomSheet<String>(
       context: context,
-      builder: (BuildContext context) {
+      builder: (context) {
         return ListView.builder(
           shrinkWrap: true,
           itemCount: methods.length,
@@ -121,73 +117,76 @@ class _DeliveryListPageState extends State<DeliveryListPage> with SingleTickerPr
       },
     );
 
-    if (result != null && result != '全部') {
-      setState(() => _deliveryDays = result);
-      _fetchOrders(_getStatus(controller.tabController.index), isRefresh: true);
-    } else if (result == '全部') {
-      setState(() => _deliveryDays = null);
+    if (result != null) {
+      setState(() {
+        _deliveryDays = result;
+      });
       _fetchOrders(_getStatus(controller.tabController.index), isRefresh: true);
     }
   }
 
-  // 构建搜索区域（搜索框和时间选择器同一行）
   Widget _buildSearchArea() {
-    return Container(
-      padding: EdgeInsets.all(10),
-      color: Colors.grey[100],
-      child: Row(
-        children: [
-          Expanded(child: CustomTextField(
-            name: 'kyInStorageNumber',
-            labelText: '搜索订单号、收件人...',
-            hintText: '搜索订单号、收件人...',
-            controller: _searchController,
-            prefixIcon: Icons.search,
-            suffixIcon: Icons.barcode_reader,
-            onSuffixPressed: () async {
-              final barcodeResult = await Get.toNamed('/scanner');
-              if (barcodeResult != null) {
-                await _fetchOrders(_getStatus(controller.tabController.index), isRefresh: true);
-              }
-            },
-            onSubmitted: (value) async {
-              if (value != null) {
-                await _fetchOrders(_getStatus(controller.tabController.index), isRefresh: true);
-              }
-            },
-          )),
-          // 间隔
-          SizedBox(width: 10),
-          // 时间选择按钮 - 固定宽度
-          ConstrainedBox(
-            constraints: BoxConstraints(minWidth: 10),
-            child: ElevatedButton.icon(
-              onPressed: () => _showDeliveryMethodSelector(context),
-              icon: Icon(Icons.calendar_today,size: 12,),
-              label: Text(
-                style: TextStyle(color: AppColors.redGradient[400],fontSize: 12),
-                _deliveryDays ?? '时间筛选',
-                overflow: TextOverflow.ellipsis,
+    return FormBuilder(
+      key: _formKey,
+      child: Container(
+        padding: EdgeInsets.all(10),
+        color: Colors.grey[100],
+        child: Row(
+          children: [
+            Expanded(
+              child: CustomTextField(
+                name: 'searchQuery',
+                enabled: true,
+                labelText: '搜索订单号、收件人...',
+                hintText: '搜索订单号、收件人...',
+                prefixIcon: Icons.search,
+                suffixIcon: Icons.barcode_reader,
+                onSuffixPressed: () async {
+                  final barcodeResult = await Get.toNamed('/scanner');
+                  if (barcodeResult != null) {
+                    if (_formKey.currentState != null) {
+                      _formKey.currentState!.fields['searchQuery']?.didChange(barcodeResult);
+                      _fetchOrders(_getStatus(controller.tabController.index), isRefresh: true);
+                    }
+                  }
+                },
+                onSubmitted: (value) {
+                  if (value != null && _formKey.currentState != null) {
+                    _fetchOrders(_getStatus(controller.tabController.index), isRefresh: true);
+                  }
+                },
               ),
-              style: ElevatedButton.styleFrom(
-                foregroundColor: Colors.redAccent,
-                backgroundColor: Colors.white,
-                elevation: 0,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                  side: BorderSide(color: Colors.grey.shade300),
+            ),
+            SizedBox(width: 10),
+            ConstrainedBox(
+              constraints: BoxConstraints(minWidth: 10),
+              child: ElevatedButton.icon(
+                onPressed: () => _showDeliveryMethodSelector(context),
+                icon: Icon(Icons.calendar_today, size: 12),
+                label: Text(
+                  _deliveryDays ?? '时间筛选',
+                  style: TextStyle(color: AppColors.redGradient[400], fontSize: 12),
+                  overflow: TextOverflow.ellipsis,
+                ),
+                style: ElevatedButton.styleFrom(
+                  foregroundColor: Colors.redAccent,
+                  backgroundColor: Colors.white,
+                  elevation: 0,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    side: BorderSide(color: Colors.grey.shade300),
+                  ),
                 ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
 
-  //返回int型，当前返回1，三天内返回2，五年内返回4，七天内返回6
   int _getDeliveryDays(String? deliveryDays) {
-    switch (_deliveryDays) {
+    switch (deliveryDays) {
       case '全部':
         return 1;
       case '当天':
@@ -203,7 +202,6 @@ class _DeliveryListPageState extends State<DeliveryListPage> with SingleTickerPr
     }
   }
 
-  // 下拉刷新的回调函数
   Future<void> _handleRefresh() async {
     if (_isRefreshing) return;
 
@@ -211,7 +209,6 @@ class _DeliveryListPageState extends State<DeliveryListPage> with SingleTickerPr
     await _fetchOrders(currentStatus, isRefresh: true);
   }
 
-  // 加载更多数据
   Future<void> _fetchMoreOrders(DeliveryStatus status) async {
     if (_isLoadingMore || !_hasMoreData) return;
 
@@ -222,9 +219,9 @@ class _DeliveryListPageState extends State<DeliveryListPage> with SingleTickerPr
     try {
       final nextPage = _currentPage + 1;
       final response = await _authApi.DeliverManQueryDeliveryList({
-        "orderStatus": _getStatusCode(status), // 转换为API需要的状态码
+        "orderStatus": _getStatusCode(status),
         "customerCode": "10010",
-        "deliveryContent": _searchText,
+        "deliveryContent": _getSearchQuery(), // 通过表单获取搜索内容
         "deliveryDays": _getDeliveryDays(_deliveryDays),
         "page": nextPage,
         "pageSize": _pageSize,
@@ -234,7 +231,6 @@ class _DeliveryListPageState extends State<DeliveryListPage> with SingleTickerPr
         final newData = response.data ?? [];
         _currentPage = nextPage;
 
-        // 根据状态更新对应的列表
         switch (status) {
           case DeliveryStatus.pending:
             setState(() {
@@ -255,7 +251,6 @@ class _DeliveryListPageState extends State<DeliveryListPage> with SingleTickerPr
             });
             break;
           case DeliveryStatus.unknown:
-          // TODO: Handle this case.
             throw UnimplementedError();
         }
       } else {
@@ -270,9 +265,8 @@ class _DeliveryListPageState extends State<DeliveryListPage> with SingleTickerPr
     }
   }
 
-  // 获取订单列表
   Future<void> _fetchOrders(DeliveryStatus status, {bool isRefresh = false}) async {
-    print("_fetchOrders--------------------------------${_searchText}");
+    print("_fetchOrders--------------------------------${_getSearchQuery()}");
     if (_isRequesting) return;
 
     if (isRefresh) {
@@ -288,9 +282,9 @@ class _DeliveryListPageState extends State<DeliveryListPage> with SingleTickerPr
 
     try {
       final response = await _authApi.DeliverManQueryDeliveryList({
-        "orderStatus": _getStatusCode(status), // 转换为API需要的状态码
+        "orderStatus": _getStatusCode(status),
         "customerCode": "10010",
-        "deliveryContent": _searchText,
+        "deliveryContent": _getSearchQuery(), // 通过表单获取搜索内容
         "deliveryDays": _getDeliveryDays(_deliveryDays),
         "page": _currentPage,
         "pageSize": _pageSize,
@@ -300,7 +294,6 @@ class _DeliveryListPageState extends State<DeliveryListPage> with SingleTickerPr
       if (response.code == 200) {
         final data = response.data ?? [];
 
-        // 根据状态更新对应的列表
         switch (status) {
           case DeliveryStatus.pending:
             setState(() {
@@ -321,7 +314,6 @@ class _DeliveryListPageState extends State<DeliveryListPage> with SingleTickerPr
             });
             break;
           case DeliveryStatus.unknown:
-          // TODO: Handle this case.
             throw UnimplementedError();
         }
       } else {
@@ -342,7 +334,6 @@ class _DeliveryListPageState extends State<DeliveryListPage> with SingleTickerPr
     }
   }
 
-  // 将DeliveryStatus转换为API所需的状态码
   int _getStatusCode(DeliveryStatus status) {
     switch (status) {
       case DeliveryStatus.pending:
@@ -354,6 +345,11 @@ class _DeliveryListPageState extends State<DeliveryListPage> with SingleTickerPr
       default:
         return 22;
     }
+  }
+
+  // 从表单获取搜索内容
+  String _getSearchQuery() {
+    return _formKey.currentState?.fields['searchQuery']?.value ?? '';
   }
 
   @override
@@ -377,11 +373,8 @@ class _DeliveryListPageState extends State<DeliveryListPage> with SingleTickerPr
             child: TabBarView(
               controller: controller.tabController,
               children: [
-                // 待派件 - 传递DeliveryStatus.pending
                 _buildRefreshableList(_pendingList, DeliveryStatus.pending),
-                // 已派件 - 传递DeliveryStatus.delivered
                 _buildRefreshableList(_completedList, DeliveryStatus.delivered),
-                // 派件失败 - 传递DeliveryStatus.failed
                 _buildRefreshableList(_failedList, DeliveryStatus.failed),
               ],
             ),
@@ -391,30 +384,26 @@ class _DeliveryListPageState extends State<DeliveryListPage> with SingleTickerPr
     );
   }
 
-  // 构建可刷新的列表
   Widget _buildRefreshableList(List<dynamic> orders, DeliveryStatus status) {
     return LiquidPullToRefresh(
       onRefresh: _handleRefresh,
       showChildOpacityTransition: false,
-      color: Colors.red, // 使用红色作为刷新指示器颜色
+      color: Colors.red,
       backgroundColor: Colors.white,
       child: ListView.builder(
         controller: _scrollController,
         itemCount: orders.isEmpty && !_isRefreshing ? 1 : orders.length + (_isLoadingMore || _hasMoreData ? 1 : 0),
         itemBuilder: (context, index) {
           if (orders.isEmpty && !_isRefreshing) {
-            // 显示空数据状态
             return _buildEmptyState(status);
           } else if (index < orders.length) {
-            // 显示数据项 - 传递对应的DeliveryStatus
             final order = orders[index];
             return DeliveryListItem(
               item: order,
               onTap: () => controller.navigateToDetail(order, status.toString()),
-              status: status, // 传递当前Tab对应的状态
+              status: status,
             );
           } else {
-            // 显示加载更多指示器
             return _buildLoadingIndicator();
           }
         },
@@ -422,12 +411,10 @@ class _DeliveryListPageState extends State<DeliveryListPage> with SingleTickerPr
     );
   }
 
-  // 构建空数据状态UI
   Widget _buildEmptyState(DeliveryStatus status) {
     String emptyText = '';
     IconData emptyIcon = Icons.hourglass_empty_outlined;
 
-    // 根据不同状态显示不同的空状态提示
     switch (status) {
       case DeliveryStatus.pending:
         emptyText = '暂无待派件';
@@ -447,34 +434,22 @@ class _DeliveryListPageState extends State<DeliveryListPage> with SingleTickerPr
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(
-            emptyIcon,
-            size: 80,
-            color: AppColors.redGradient[200],
-          ),
+          Icon(emptyIcon, size: 80, color: AppColors.redGradient[200]),
           const SizedBox(height: 20),
           Text(
             emptyText,
-            style: TextStyle(
-              fontSize: 18,
-              color: Colors.grey[500],
-              fontWeight: FontWeight.w500,
-            ),
+            style: TextStyle(fontSize: 18, color: Colors.grey[500], fontWeight: FontWeight.w500),
           ),
           const SizedBox(height: 10),
           Text(
             '请尝试更换筛选条件或稍后再试',
-            style: TextStyle(
-              fontSize: 14,
-              color: Colors.grey[400],
-            ),
+            style: TextStyle(fontSize: 14, color: Colors.grey[400]),
           ),
         ],
       ),
     );
   }
 
-  // 构建加载更多指示器
   Widget _buildLoadingIndicator() {
     return Container(
       padding: EdgeInsets.symmetric(vertical: 16),
@@ -483,9 +458,7 @@ class _DeliveryListPageState extends State<DeliveryListPage> with SingleTickerPr
           ? Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          CircularProgressIndicator(
-            valueColor: AlwaysStoppedAnimation<Color>(Colors.red),
-          ),
+          CircularProgressIndicator(valueColor: AlwaysStoppedAnimation<Color>(Colors.red)),
           SizedBox(width: 10),
           Text('加载更多...'),
         ],

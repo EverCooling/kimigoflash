@@ -1,3 +1,4 @@
+
 import 'package:flutter/material.dart';
 import 'package:flutter_form_builder/flutter_form_builder.dart';
 
@@ -7,12 +8,10 @@ class CustomTextField extends StatelessWidget {
   final String hintText;
   final IconData? prefixIcon;
   final VoidCallback? onSuffixPressed;
-  final ValueChanged<String?>? onSubmitted;  // 修改类型
-  final String? initialValue;
-  final bool enabled;
+  final ValueChanged<String?>? onSubmitted;
   final TextEditingController? controller;
-  final IconData? suffixIcon;// 可选 controller
-  final FormFieldValidator<String>? validator; // 添加 validator 支持
+  final IconData? suffixIcon;
+  final FormFieldValidator<String>? validator;
 
   const CustomTextField({
     super.key,
@@ -23,20 +22,17 @@ class CustomTextField extends StatelessWidget {
     this.prefixIcon,
     this.onSuffixPressed,
     this.onSubmitted,
-    this.initialValue,
-    this.enabled = true,
     this.suffixIcon,
     this.validator,
+    required bool enabled,
   });
 
   @override
   Widget build(BuildContext context) {
     return FormBuilderTextField(
-      controller: controller, // ✅ 使用传入的 controller
       name: name,
       validator: validator,
-      enabled: enabled,
-      initialValue: initialValue,
+      controller: controller,
       decoration: InputDecoration(
         labelText: labelText,
         hintText: hintText,
@@ -54,9 +50,7 @@ class CustomTextField extends StatelessWidget {
           borderRadius: BorderRadius.circular(8.0),
           borderSide: BorderSide(color: Colors.red, width: 2.0),
         ),
-        prefixIcon: prefixIcon != null
-            ? Icon(prefixIcon, color: Colors.red)
-            : null,
+        prefixIcon: prefixIcon != null ? Icon(prefixIcon, color: Colors.red) : null,
         suffixIcon: suffixIcon != null
             ? IconButton(icon: Icon(suffixIcon), onPressed: onSuffixPressed)
             : null,

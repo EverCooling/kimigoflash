@@ -133,6 +133,7 @@ class _SignReceiptScanPageState extends State<SignReceiptScanPage> {
                     CustomTextField(
                       name: 'trackingNumber',
                       labelText: '扫描单号',
+                      enabled: true,
                       hintText: '请输入运单号',
                       prefixIcon: Icons.vertical_distribute,
                       suffixIcon: Icons.barcode_reader,

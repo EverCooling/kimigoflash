@@ -32,6 +32,7 @@ class LoginPage extends GetView<LoginController> {
                 SizedBox(height: 220),
                 CustomTextField(
                   name: 'username',
+                  enabled: true,
                   labelText: '用户名',
                   controller: controller.usernameController,
                   hintText: '请输入用户名',
@@ -45,6 +46,7 @@ class LoginPage extends GetView<LoginController> {
                 SizedBox(height: 20),
                 CustomTextField(
                   name: 'password',
+                  enabled: true,
                   labelText: '密码',
                   controller: controller.passwordController,
                   hintText: '请输入密码',

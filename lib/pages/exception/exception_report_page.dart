@@ -91,6 +91,7 @@ class _ExceptionReportPageState extends State<ExceptionReportPage> {
             children: [
               CustomTextField(
                 name: 'kyInStorageNumber',
+                enabled: true,
                 labelText: '扫描单号',
                 hintText: '请输入运单号',
                 controller: controller.scanController,
