@@ -45,6 +45,7 @@ class MultiImagePicker extends StatefulWidget {
 class _MultiImagePickerState extends State<MultiImagePicker> {
   late List<AssetEntity> _selectedAssets;
   List<String> _uploadedUrls = [];
+  List<String> _watermarkedPaths = []; // 存储带水印的图片路径
   LocationData? _locationData;
   bool _locationPermissionGranted = false;
 
@@ -53,6 +54,7 @@ class _MultiImagePickerState extends State<MultiImagePicker> {
     super.initState();
     _selectedAssets = widget.initialValue ?? [];
     _checkLocationPermission();
+    _watermarkedPaths = List.filled(_selectedAssets.length, ''); // 初始化路径列表
   }
 
   // 检查并请求位置权限
@@ -105,64 +107,115 @@ class _MultiImagePickerState extends State<MultiImagePicker> {
               : _selectedAssets.length,
           itemBuilder: (context, index) {
             if (index < _selectedAssets.length) {
-              final asset = _selectedAssets[index];
-              return GestureDetector(
-                onTap: () => _previewImage(index),
-                child: Stack(
-                  fit: StackFit.expand,
-                  children: [
-                    Positioned.fill(
-                      child: AssetEntityImage(
-                        asset,
-                        isOriginal: false,
-                        fit: BoxFit.cover,
-                        thumbnailFormat: ThumbnailFormat.jpeg,
-                        errorBuilder: (context, error, stackTrace) =>
-                        const Center(child: Icon(Icons.image_not_supported)),
-                      ),
-                    ),
-                    Positioned(
-                      top: 4,
-                      right: 4,
-                      child: GestureDetector(
-                        onTap: () => _removeAsset(index),
-                        child: Container(
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: AppColors.redGradient[400],
-                          ),
-                          padding: const EdgeInsets.all(2),
-                          child: const Icon(
-                            Icons.close,
-                            color: Colors.white,
-                            size: 16,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              );
+              // 优先显示带水印的图片
+              if (_watermarkedPaths[index].isNotEmpty) {
+                return _buildWatermarkedImageTile(index);
+              } else {
+                return _buildOriginalImageTile(index);
+              }
             } else {
-              return GestureDetector(
-                onTap: _showImageSourceDialog,
-                child: Container(
-                  decoration: BoxDecoration(
-                    border: Border.all(color: Color(0xFFEE5C5C)),
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                  child: const Center(
-                    child: Icon(
-                      Icons.add,
-                      color: Color(0xFFEE5C5C),
-                    ),
-                  ),
-                ),
-              );
+              return _buildAddImageTile();
             }
           },
         ),
       ],
+    );
+  }
+
+  // 构建带水印的图片卡片
+  Widget _buildWatermarkedImageTile(int index) {
+    return GestureDetector(
+      onTap: () => _previewImage(index, isWatermarked: true),
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          Positioned.fill(
+            child: Image.file(
+              File(_watermarkedPaths[index]),
+              fit: BoxFit.cover,
+              errorBuilder: (context, error, stackTrace) => const Center(child: Icon(Icons.image_not_supported)),
+            ),
+          ),
+          Positioned(
+            top: 4,
+            right: 4,
+            child: GestureDetector(
+              onTap: () => _removeAsset(index),
+              child: Container(
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: AppColors.redGradient[400],
+                ),
+                padding: const EdgeInsets.all(2),
+                child: const Icon(
+                  Icons.close,
+                  color: Colors.white,
+                  size: 16,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // 构建原始图片卡片
+  Widget _buildOriginalImageTile(int index) {
+    return GestureDetector(
+      onTap: () => _previewImage(index, isWatermarked: false),
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          Positioned.fill(
+            child: AssetEntityImage(
+              _selectedAssets[index],
+              isOriginal: false,
+              fit: BoxFit.cover,
+              thumbnailFormat: ThumbnailFormat.jpeg,
+              errorBuilder: (context, error, stackTrace) => const Center(child: Icon(Icons.image_not_supported)),
+            ),
+          ),
+          Positioned(
+            top: 4,
+            right: 4,
+            child: GestureDetector(
+              onTap: () => _removeAsset(index),
+              child: Container(
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: AppColors.redGradient[400],
+                ),
+                padding: const EdgeInsets.all(2),
+                child: const Icon(
+                  Icons.close,
+                  color: Colors.white,
+                  size: 16,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // 构建添加图片卡片
+  Widget _buildAddImageTile() {
+    return GestureDetector(
+      onTap: _showImageSourceDialog,
+      child: Container(
+        decoration: BoxDecoration(
+          border: Border.all(color: Color(0xFFEE5C5C)),
+          borderRadius: BorderRadius.circular(4),
+        ),
+        child: const Center(
+          child: Icon(
+            Icons.add,
+            color: Color(0xFFEE5C5C),
+          ),
+        ),
+      ),
     );
   }
 
@@ -212,6 +265,7 @@ class _MultiImagePickerState extends State<MultiImagePicker> {
     if (entity != null) {
       setState(() {
         _selectedAssets.add(entity);
+        _watermarkedPaths.add(''); // 新增图片时初始化空路径
       });
       widget.onChanged?.call(_selectedAssets);
     }
@@ -231,6 +285,7 @@ class _MultiImagePickerState extends State<MultiImagePicker> {
     if (result != null) {
       setState(() {
         _selectedAssets = result;
+        _watermarkedPaths = List.filled(_selectedAssets.length, ''); // 批量初始化路径
       });
       widget.onChanged?.call(_selectedAssets);
       await _uploadSelectedImages();
@@ -240,16 +295,21 @@ class _MultiImagePickerState extends State<MultiImagePicker> {
   void _removeAsset(int index) {
     setState(() {
       _selectedAssets.removeAt(index);
+      _watermarkedPaths.removeAt(index);
     });
     widget.onChanged?.call(_selectedAssets);
   }
 
-  Future<void> _previewImage(int index) async {
+  Future<void> _previewImage(int index, {bool isWatermarked = false}) async {
     if (_selectedAssets.isEmpty) return;
 
     final List<File?> files = [];
-    for (var asset in _selectedAssets) {
-      files.add(await asset.file);
+    for (var i = 0; i < _selectedAssets.length; i++) {
+      if (isWatermarked && _watermarkedPaths[i].isNotEmpty) {
+        files.add(File(_watermarkedPaths[i]));
+      } else {
+        files.add(await _selectedAssets[i].file);
+      }
     }
 
     final validFiles = files.where((file) => file != null).toList();
@@ -272,8 +332,8 @@ class _MultiImagePickerState extends State<MultiImagePicker> {
             child: PhotoViewGallery.builder(
               scrollPhysics: const BouncingScrollPhysics(),
               itemCount: validFiles.length,
-              builder: (context, index) {
-                final file = validFiles[index];
+              builder: (context, i) {
+                final file = validFiles[i];
                 return PhotoViewGalleryPageOptions(
                   imageProvider: FileImage(file!),
                   minScale: PhotoViewComputedScale.contained * 0.8,
@@ -299,16 +359,18 @@ class _MultiImagePickerState extends State<MultiImagePicker> {
       final List<String> uploadedUrls = [];
       HUD.show(context);
 
-      for (var asset in _selectedAssets) {
-        final File? file = await asset.file;
+      for (var i = 0; i < _selectedAssets.length; i++) {
+        final asset = _selectedAssets[i];
+        final file = await asset.file;
         if (file != null) {
           File? watermarkedFile;
 
-          // 关键修复：取消单号判断的注释，并优化条件
-          if (widget.orderNumber != null && widget.orderNumber!.isNotEmpty) {
-            watermarkedFile = await _addTextWatermarkToImage(file);
+          // 添加水印并保存路径
+          watermarkedFile = await _addTextWatermarkToImage(file);
+          if (watermarkedFile != null) {
+            _watermarkedPaths[i] = watermarkedFile.path;
           }
-
+          // 上传图片
           final response = await AuthApi().uploadFile(watermarkedFile ?? file);
           if (response.data != null) {
             uploadedUrls.add(response.data!['value']);
@@ -340,40 +402,38 @@ class _MultiImagePickerState extends State<MultiImagePicker> {
       final formattedTime = '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')} '
           '${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}';
 
-      String watermarkText = '单号: ${widget.orderNumber}\n';
+      String watermarkText = '${widget.orderNumber}\n';
 
       if (_locationPermissionGranted && _locationData != null) {
-        watermarkText += '经纬度: ${_locationData!.longitude.toString()}, ${_locationData!.latitude.toString()}\n';
+        watermarkText += '${_locationData!.longitude.toString()}, ${_locationData!.latitude.toString()}\n';
       } else {
         watermarkText += '经纬度: 获取失败\n';
       }
 
-      watermarkText += '时间: $formattedTime';
+      watermarkText += '$formattedTime';
 
       final Uint8List imgBytes = await imageFile.readAsBytes();
 
-      // 核心修改：黑底白字效果
+      // 黑底白字水印
       final watermarkedImg = await ImageWatermark.addTextWatermark(
         imgBytes: imgBytes,
         watermarkText: watermarkText,
         dstX: 100,
         dstY: 100,
-        color: Colors.white,        // 文字边距
+        color: Colors.white,
       );
 
-      // 优化文件路径：确保目录存在
+      // 保存带水印的图片
       final tempDir = await getTemporaryDirectory();
       final orderDir = widget.orderNumber != null
           ? '${tempDir.path}/${widget.orderNumber}'
           : tempDir.path;
-
-      // 确保目录存在
       await Directory(orderDir).create(recursive: true);
 
       final tempFilePath = '$orderDir/${DateTime.now().millisecondsSinceEpoch}_watermark.jpg';
       final watermarkedFile = File(tempFilePath);
-
       await watermarkedFile.writeAsBytes(watermarkedImg);
+
       return watermarkedFile;
     } catch (e) {
       print('添加水印失败: $e');
