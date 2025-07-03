@@ -63,19 +63,19 @@ class _ExceptionReportPageState extends State<ExceptionReportPage> {
 
   //异常登记请求接口
   Future<void> _submit() async {
-    if (!_validateForm()) {
+    if (!_formKey.currentState!.validate()) {
+      Get.snackbar('错误', '请检查表单输入');
       return;
     }
-    final form = _formKey.currentState;
-    final Map<String, dynamic> formData = form!.value;
-    final String deliveryFailType = formData['deliveryFailType'] ?? '';
+
+    final formData = _formKey.currentState!.value;
 
     HUD.show(context);
     try {
       final response = await _authApi.AddDeliveryManAbnormalRegister( {
-        "kyInStorageNumber": orderNumber ?? '',
-        "deliveryFailType": _getDeliveryFailType(deliveryFailType),
-        "failTitle": failTitle ?? '默认异常标题',
+        "kyInStorageNumber": formData['trackingNumber'] ?? '',
+        "deliveryFailType": _getDeliveryFailType(formData['deliveryFailType']),
+        "failTitle": formData['failTitle'] ?? '默认异常标题',
         "deliveryFailUrl": _receiptImageUrls?.join(',') ?? '',
         "customerCode": "10010"
       });
@@ -108,7 +108,7 @@ class _ExceptionReportPageState extends State<ExceptionReportPage> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               CustomTextField(
-                name: 'trackingNumber',
+                name: 'kyInStorageNumber',
                 labelText: '扫描单号',
                 hintText: '请输入运单号',
                 controller: controller.scanController,
@@ -117,7 +117,7 @@ class _ExceptionReportPageState extends State<ExceptionReportPage> {
                 onSuffixPressed: () async {
                   final barcodeResult = await Get.toNamed('/scanner');
                   if (barcodeResult != null) {
-                    _formKey.currentState?.fields['trackingNumber']?.didChange(barcodeResult);
+                    _formKey.currentState?.fields['kyInStorageNumber']?.didChange(barcodeResult);
                   }
                 },
                 onSubmitted: (value) async {
