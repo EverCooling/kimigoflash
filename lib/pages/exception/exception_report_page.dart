@@ -82,7 +82,7 @@ class _ExceptionReportPageState extends State<ExceptionReportPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: Text('异常登记')),
-      body: Padding(
+      body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
         child: FormBuilder(
           key: _formKey,

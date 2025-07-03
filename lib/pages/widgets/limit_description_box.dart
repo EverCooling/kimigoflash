@@ -57,7 +57,7 @@ class ExceptionDescriptionField extends StatelessWidget {
   // 构建字数提示组件
   Widget _buildCharacterCountIndicator(String fieldName, BuildContext context) {
     return StreamBuilder<String>(
-      stream: FormBuilder.of(context)?.fields[fieldName]?.value as Stream<String>?, // 使用value流并转换为String类型
+      stream: FormBuilder.of(context)?.fields[fieldName]?.value, // 使用value流并转换为String类型
       builder: (context, snapshot) {
         final value = snapshot.data ?? '';
         final length = value.length;
