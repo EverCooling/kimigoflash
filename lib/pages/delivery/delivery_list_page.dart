@@ -400,7 +400,7 @@ class _DeliveryListPageState extends State<DeliveryListPage> with SingleTickerPr
             final order = orders[index];
             return DeliveryListItem(
               item: order,
-              onTap: () => controller.navigateToDetail(order, status.toString()),
+              onTap: () => controller.navigateToDetail(order, status),
               status: status,
             );
           } else {

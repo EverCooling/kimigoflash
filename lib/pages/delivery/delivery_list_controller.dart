@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:kimiflash/pages/delivery/components/delivery_list_item.dart';
 
 import '../../http/api/auth_api.dart';
 import '../widgets/loading_manager.dart';
@@ -20,16 +21,16 @@ class DeliveryListController extends GetxController  with GetTickerProviderState
     super.onClose();
   }
 
-  void navigateToDetail(Map<String, dynamic> order, String type) {
+  void navigateToDetail(Map<String, dynamic> order, DeliveryStatus type) {
     // 根据类型导航到不同的详情页
     switch (type) {
-      case 'pending':
+      case DeliveryStatus.pending:
         Get.toNamed('/pending-delivery-detail', arguments: order);
         break;
-      case 'completed':
+      case DeliveryStatus.delivered:
         Get.toNamed('/complete-delivery-detail', arguments: order);
         break;
-      case 'failed':
+      case DeliveryStatus.failed:
         Get.toNamed('/complete-delivery-detail', arguments: order);
         // Get.toNamed('/delivery/failed_detail', arguments: order);
         break;
