@@ -1,4 +1,3 @@
-// exception_report_page.dart
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:flutter_form_builder/flutter_form_builder.dart';
@@ -11,21 +10,19 @@ import 'package:kimiflash/pages/exception/exception_report_controller.dart';
 
 import '../widgets/custom_text_field.dart';
 
-class ExceptionReportPage extends StatefulWidget{
+class ExceptionReportPage extends StatefulWidget {
   final Map<String, dynamic> deliveryItem;
 
   const ExceptionReportPage({super.key, required this.deliveryItem});
 
   @override
   State<ExceptionReportPage> createState() => _ExceptionReportPageState();
-
 }
 
 class _ExceptionReportPageState extends State<ExceptionReportPage> {
   final controller = Get.put(ExceptionReportController());
   List<String>? _receiptImageUrls;
   final AuthApi _authApi = AuthApi();
-  String? orderNumber;
   String? deliveryFailType;
   String? failTitle;
 
@@ -44,36 +41,27 @@ class _ExceptionReportPageState extends State<ExceptionReportPage> {
     }
   }
 
-  bool _validateForm() {
-    final formState = _formKey.currentState;
-    if (formState == null || !formState.validate()) {
-      Get.snackbar('错误', '请检查表单输入');
-      return false;
-    }
-
-    formState.save();
-
-    if (deliveryFailType == null) {
-      Get.snackbar('错误', '请选择异常原因');
-      return false;
-    }
-
-    return true;
-  }
-
   //异常登记请求接口
   Future<void> _submit() async {
-    if (!_formKey.currentState!.validate()) {
+    // 调用saveAndValidate方法，该方法会先保存表单值再进行验证
+    if (!_formKey.currentState!.saveAndValidate()) {
       Get.snackbar('错误', '请检查表单输入');
       return;
     }
 
+    // 获取保存后的表单值
     final formData = _formKey.currentState!.value;
+    print("表单数据: $formData"); // 添加调试输出
+
+    // 确保deliveryFailType已设置
+    if (deliveryFailType == null) {
+      deliveryFailType = formData['deliveryFailType'];
+    }
 
     HUD.show(context);
     try {
-      final response = await _authApi.AddDeliveryManAbnormalRegister( {
-        "kyInStorageNumber": formData['trackingNumber'] ?? '',
+      final response = await _authApi.AddDeliveryManAbnormalRegister({
+        "kyInStorageNumber": formData['kyInStorageNumber'] ?? '',
         "deliveryFailType": _getDeliveryFailType(formData['deliveryFailType']),
         "failTitle": formData['failTitle'] ?? '默认异常标题',
         "deliveryFailUrl": _receiptImageUrls?.join(',') ?? '',
@@ -86,14 +74,12 @@ class _ExceptionReportPageState extends State<ExceptionReportPage> {
       } else {
         Get.snackbar('失败', response.msg ?? '未知错误');
       }
-
     } catch (e) {
       print(e);
       Get.snackbar('网络错误', e.toString());
     } finally {
       HUD.hide();
     }
-
   }
 
   @override
@@ -120,8 +106,11 @@ class _ExceptionReportPageState extends State<ExceptionReportPage> {
                     _formKey.currentState?.fields['kyInStorageNumber']?.didChange(barcodeResult);
                   }
                 },
-                onSubmitted: (value) async {
-
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return '请输入或扫描订单号';
+                  }
+                  return null;
                 },
               ),
               SizedBox(height: 20),
@@ -134,19 +123,18 @@ class _ExceptionReportPageState extends State<ExceptionReportPage> {
                   }
                   return null;
                 },
-                initialValue: deliveryFailType,
                 builder: (field) {
                   return CustomDropdownField(
-                    name: 'signMethod',
+                    name: 'deliveryFailType', // 确保与FormBuilderField的name一致
                     labelText: '请选择异常原因',
                     items: controller.reasons,
-                    initialValue: field.value,
+                    initialValue: field.value.toString(),
                     onTap: (context) async {
                       final result = await SignMethodBottomSheet.show(
                         context,
                         methods: controller.reasons,
-                        initialValue: field.value,
-                        title: '选择派件方式',
+                        initialValue: field.value.toString(),
+                        title: '选择异常原因',
                         titleStyle: TextStyle(fontSize: 20, color: Colors.blue),
                         selectedColor: Colors.blue,
                         shape: RoundedRectangleBorder(
@@ -160,13 +148,12 @@ class _ExceptionReportPageState extends State<ExceptionReportPage> {
                         });
                         return result['value'];
                       }
-                      return field.value;
+                      return field.value.toString();
                     }, validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return '请选择签收方式';
-                      }
-                      return null;
-                    },
+                      //判断为空提示请输入异常原因
+                    return value == null || value.isEmpty ? '请输入异常原因' : null;
+
+                  },
                   );
                 },
               ),
@@ -182,13 +169,11 @@ class _ExceptionReportPageState extends State<ExceptionReportPage> {
                 ),
                 maxLines: 3,
                 validator: (value) {
-                  if (value == null || value.toString().isEmpty) {
+                  if (value == null || value.isEmpty) {
                     return '请输入异常描述';
                   }
                   return null;
                 },
-                onSaved: (value) => failTitle = value,
-                initialValue: failTitle,
               ),
 
               SizedBox(height: 20),
