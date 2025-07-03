@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:flutter_form_builder/flutter_form_builder.dart';
 import 'package:kimiflash/http/api/auth_api.dart';
@@ -24,7 +25,8 @@ class _ExceptionReportPageState extends State<ExceptionReportPage> {
   List<String>? _receiptImageUrls;
   final AuthApi _authApi = AuthApi();
   String? deliveryFailType;
-  String? failTitle;
+  int _currentLength = 0; // 记录当前输入字数
+  final int _maxLength = 200; // 最大字数限制
 
   final _formKey = GlobalKey<FormBuilderState>();
 
@@ -41,19 +43,16 @@ class _ExceptionReportPageState extends State<ExceptionReportPage> {
     }
   }
 
-  //异常登记请求接口
+  // 异常登记请求接口
   Future<void> _submit() async {
-    // 调用saveAndValidate方法，该方法会先保存表单值再进行验证
     if (!_formKey.currentState!.saveAndValidate()) {
       Get.snackbar('错误', '请检查表单输入');
       return;
     }
 
-    // 获取保存后的表单值
     final formData = _formKey.currentState!.value;
-    print("表单数据: $formData"); // 添加调试输出
+    print("表单数据: $formData");
 
-    // 确保deliveryFailType已设置
     if (deliveryFailType == null) {
       deliveryFailType = formData['deliveryFailType'];
     }
@@ -125,7 +124,7 @@ class _ExceptionReportPageState extends State<ExceptionReportPage> {
                 },
                 builder: (field) {
                   return CustomDropdownField(
-                    name: 'deliveryFailType', // 确保与FormBuilderField的name一致
+                    name: 'deliveryFailType',
                     labelText: '请选择异常原因',
                     items: controller.reasons,
                     initialValue: field.value.toString(),
@@ -149,31 +148,61 @@ class _ExceptionReportPageState extends State<ExceptionReportPage> {
                         return result['value'];
                       }
                       return field.value.toString();
-                    }, validator: (value) {
-                      //判断为空提示请输入异常原因
-                    return value == null || value.isEmpty ? '请输入异常原因' : null;
-
-                  },
+                    },
+                    validator: (value) {
+                      return value == null || value.isEmpty ? '请输入异常原因' : null;
+                    },
                   );
                 },
               ),
               SizedBox(height: 20),
 
-              // 异常描述输入框
-              FormBuilderTextField(
-                name: 'failTitle',
-                decoration: InputDecoration(
-                  labelText: '异常描述',
-                  hintText: '请输入详细异常情况',
-                  border: OutlineInputBorder(),
-                ),
-                maxLines: 3,
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return '请输入异常描述';
-                  }
-                  return null;
-                },
+              // 异常描述输入框（带字数限制）
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  FormBuilderTextField(
+                    name: 'failTitle',
+                    decoration: InputDecoration(
+                      labelText: '异常描述',
+                      hintText: '请输入详细异常情况（最多200字）',
+                      border: OutlineInputBorder(),
+                    ),
+                    maxLines: 3,
+                    maxLength: _maxLength, // 设置最大长度
+                    maxLengthEnforcement: MaxLengthEnforcement.enforced, // 强制限制字数
+                    onChanged: (value) {
+                      setState(() {
+                        _currentLength = value?.length ?? 0;
+                      });
+                    },
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return '请输入异常描述';
+                      }
+                      if (value.length > _maxLength) {
+                        return '不能超过200字';
+                      }
+                      return null;
+                    },
+                  ),
+                  // 字数提示
+                  Padding(
+                    padding: const EdgeInsets.only(top: 4),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        Text(
+                          '$_currentLength/$_maxLength',
+                          style: TextStyle(
+                            color: _currentLength > _maxLength ? Colors.red : Colors.grey,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
 
               SizedBox(height: 20),
