@@ -13,7 +13,9 @@ import '../widgets/multi_image_picker.dart';
 import '../widgets/sign_method_bottom_sheet.dart';
 
 class SignReceiptScanPage extends StatefulWidget {
-  const SignReceiptScanPage({Key? key}) : super(key: key);
+  final Map<String, dynamic> deliveryItem;
+
+  const SignReceiptScanPage({Key? key, required this.deliveryItem}) : super(key: key);
 
   @override
   State<SignReceiptScanPage> createState() => _SignReceiptScanPageState();

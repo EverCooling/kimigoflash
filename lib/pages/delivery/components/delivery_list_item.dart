@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart'; // 新增：用于HapticFeedback
+import 'package:flutter/services.dart';
+import 'package:get/get.dart';
+import 'package:get/get_core/src/get_main.dart';
 import 'package:kimiflash/theme/app_colors.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -14,12 +16,16 @@ class DeliveryListItem extends StatelessWidget {
   final Map<String, dynamic> item;
   final VoidCallback onTap;
   final DeliveryStatus status;
+  final VoidCallback? onSignTap;     // 签收按钮回调
+  final VoidCallback? onFailTap;     // 失败按钮回调
 
   const DeliveryListItem({
     Key? key,
     required this.item,
     required this.onTap,
     required this.status,
+    this.onSignTap,
+    this.onFailTap,
   }) : super(key: key);
 
   @override
@@ -29,67 +35,73 @@ class DeliveryListItem extends StatelessWidget {
       child: Card(
         elevation: 2,
         margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
-        child: ListTile(
-          minVerticalPadding: 16,
-          contentPadding: const EdgeInsets.symmetric(horizontal: 16),
-          title: Row(
-            children: [
-              Text('单号：${item['kyInStorageNumber'] ?? ''}'),
-              const Spacer(),
-              // 新增：复制电话图标按钮
-              GestureDetector(
-                onTap: () => _copyPhoneNumber(context),
-                child: Icon(Icons.content_copy, color: AppColors.redGradient[500]),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            ListTile(
+              minVerticalPadding: 16,
+              contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+              title: Row(
+                children: [
+                  Text('单号：${item['kyInStorageNumber'] ?? ''}'),
+                  const Spacer(),
+                  _buildStatusBadge(),
+                ],
               ),
-              _buildStatusBadge(),
-            ],
-          ),
-          subtitle: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const SizedBox(height: 10),
-              Row(children: [
-                Icon(Icons.shop_outlined, size: 16, color: Colors.red),
-                const SizedBox(width: 4),
-                Text('订单来源：${item['orderSource'] ?? ''}'),
-              ]),
-              const SizedBox(height: 10),
-              Row(children: [
-                Icon(Icons.person_outline, size: 16, color: Colors.red),
-                const SizedBox(width: 4),
-                Text('收件人：${item['recipientName'] ?? ''}'),
-              ]),
-              // 新增：电话显示行
-              const SizedBox(height: 10),
-              Row(children: [
-                Icon(Icons.phone_outlined, size: 16, color: Colors.red),
-                const SizedBox(width: 4),
-                Text('电话：${item['recipietnMobile'] ?? ''}'),
-                const Spacer(),
-                // 新增：电话图标按钮
-                GestureDetector(
-                  onTap: () => _callPhoneNumber(context),
-                  child: Icon(Icons.call, color: AppColors.redGradient[500]),
-                ),
-              ]),
-              const SizedBox(height: 10),
-              Row(children: [
-                Icon(Icons.location_on_outlined, size: 16, color: Colors.red),
-                const SizedBox(width: 4),
-                Expanded(
-                  child: Text(
-                    '地址：${item['recipetenAddressFirst'] ?? ''}${item['recipetenAddressSecond'] ?? ''}${item['recipetenAddressThid'] ?? ''}',
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-                GestureDetector(
-                  onTap: () => _showMapOptions(context),
-                  child: Icon(Icons.open_in_new, color: AppColors.redGradient[500]),
-                ),
-              ]),
-            ],
-          ),
+              subtitle: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const SizedBox(height: 10),
+                  Row(children: [
+                    Icon(Icons.shop_outlined, size: 16, color: Colors.red),
+                    const SizedBox(width: 4),
+                    Text('订单来源：${item['orderSource'] ?? ''}'),
+                  ]),
+                  const SizedBox(height: 10),
+                  Row(children: [
+                    Icon(Icons.person_outline, size: 16, color: Colors.red),
+                    const SizedBox(width: 4),
+                    Text('收件人：${item['recipientName'] ?? ''}'),
+                  ]),
+                  const SizedBox(height: 10),
+                  Row(children: [
+                    Icon(Icons.phone_outlined, size: 16, color: Colors.red),
+                    const SizedBox(width: 4),
+                    Text('电话：${item['recipientPhone'] ?? ''}'),
+                    const Spacer(),
+                    GestureDetector(
+                      onTap: () => _callPhoneNumber(context),
+                      child: Icon(Icons.call, size: 18, color: AppColors.redGradient[500]),
+                    ),
+                    const SizedBox(width: 10),
+                    GestureDetector(
+                      onTap: () => _copyPhoneNumber(context),
+                      child: Icon(Icons.content_copy, size: 18, color: AppColors.redGradient[500]),
+                    ),
+                  ]),
+                  const SizedBox(height: 10),
+                  Row(children: [
+                    Icon(Icons.location_on_outlined, size: 16, color: Colors.red),
+                    const SizedBox(width: 4),
+                    Expanded(
+                      child: Text(
+                        '地址：${item['recipetenAddressFirst'] ?? ''}${item['recipetenAddressSecond'] ?? ''}${item['recipetenAddressThid'] ?? ''}',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    GestureDetector(
+                      onTap: () => _showMapOptions(context),
+                      child: Icon(Icons.open_in_new, size: 18, color: AppColors.redGradient[500]),
+                    ),
+                  ]),
+                ],
+              ),
+            ),
+            // 底部操作按钮（仅在待派件状态显示）
+            if (status == DeliveryStatus.pending)
+              _buildActionButtons(context),
+          ],
         ),
       ),
     );
@@ -159,78 +171,93 @@ class DeliveryListItem extends StatelessWidget {
     }
   }
 
-  // 新增：拨打电话功能
-  void _callPhoneNumber(BuildContext context) {
-    final phoneNumber = item['recipietnMobile'] ?? '';
-
-    if (phoneNumber.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('电话号码为空'))
-      );
-      return;
-    }
-
-    // 添加点击反馈
-    HapticFeedback.lightImpact();
-
-    // 调用系统拨号功能
-    final uri = Uri.parse('tel:$phoneNumber');
-    if (canLaunchUrl(uri) as bool) {
-      launchUrl(uri);
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('无法拨打电话: $phoneNumber'))
-      );
-    }
+// 构建右下角操作按钮
+  Widget _buildActionButtons(BuildContext context) {
+    return Align(
+      alignment: Alignment.bottomRight,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(0, 0, 16, 16),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // 失败按钮（红色）
+            FloatingActionButton(
+              onPressed: onFailTap ?? () => _navigateToExceptionPage(context),
+              backgroundColor: AppColors.redGradient[500],
+              mini: true,
+              child: Text('失败',style: TextStyle(fontSize: 12,color: Colors.white),),
+            ),
+            const SizedBox(width: 16),
+            // 签收按钮（绿色）
+            FloatingActionButton(
+              onPressed: onSignTap ?? () => _navigateToSignPage(context),
+              backgroundColor: AppColors.greenGradient[500],
+              mini: true,
+              child: Text('签收',style: TextStyle(fontSize: 12,color: Colors.white),),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
-  // 新增：复制电话号码功能
-  void _copyPhoneNumber(BuildContext context) {
-    final phoneNumber = item['kyInStorageNumber'] ?? '';
-
+  // 其他功能方法（保持不变）
+  void _callPhoneNumber(BuildContext context) {
+    final phoneNumber = item['recipientPhone'] ?? '';
     if (phoneNumber.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('电话号码为空'))
-      );
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('电话号码为空')));
       return;
     }
+    HapticFeedback.lightImpact();
+    final uri = Uri.parse('tel:$phoneNumber');
+    if (canLaunchUrl(uri) as bool) launchUrl(uri);
+    else ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('无法拨打电话: $phoneNumber')));
+  }
 
-    // 复制到剪贴板
+  void _copyPhoneNumber(BuildContext context) {
+    final phoneNumber = item['recipientPhone'] ?? '';
+    if (phoneNumber.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('电话号码为空')));
+      return;
+    }
     Clipboard.setData(ClipboardData(text: phoneNumber));
-
-    // 显示成功提示
-    ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('已复制电话号码: $phoneNumber'))
-    );
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('已复制电话号码: $phoneNumber')));
   }
 
   void _showMapOptions(BuildContext context) {
     showModalBottomSheet(
       context: context,
-      builder: (context) {
-        return Container(
-          padding: EdgeInsets.all(16),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              ListTile(
-                title: Text('Google 地图'),
-                onTap: () {
-                  Navigator.pop(context);
-                  launchUrl(Uri.parse('https://maps.google.com/?q=${item['recipetenAddressFirst']}'));
-                },
-              ),
-              ListTile(
-                title: Text('2Gis'),
-                onTap: () {
-                  Navigator.pop(context);
-                  launchUrl(Uri.parse('https://2gis.com/?q=${item['recipetenAddressFirst']}'));
-                },
-              ),
-            ],
-          ),
-        );
-      },
+      builder: (context) => Container(
+        padding: EdgeInsets.all(16),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(title: Text('Google 地图'), onTap: () {
+              Navigator.pop(context);
+              launchUrl(Uri.parse('https://maps.google.com/?q=${item['recipetenAddressFirst']}'));
+            }),
+            ListTile(title: Text('2Gis'), onTap: () {
+              Navigator.pop(context);
+              launchUrl(Uri.parse('https://2gis.com/?q=${item['recipetenAddressFirst']}'));
+            }),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // 修改导航方法，传递完整的deliveryItem
+  void _navigateToSignPage(BuildContext context) {
+    Get.toNamed(
+      '/sign-receipt-scan',
+      arguments: item, // 直接传递item作为deliveryItem
+    );
+  }
+
+  void _navigateToExceptionPage(BuildContext context) {
+    Get.toNamed(
+      '/exception-report',
+      arguments: item, // 直接传递item作为deliveryItem
     );
   }
 }

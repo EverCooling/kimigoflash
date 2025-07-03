@@ -37,7 +37,7 @@ class AppPages {
     ),
     GetPage(
       name: '/sign-receipt-scan',
-      page: () => const SignReceiptScanPage(),
+      page: () => SignReceiptScanPage(deliveryItem: Get.arguments,),
       binding: SignReceiptScanBinding(),
     ),
     GetPage(
