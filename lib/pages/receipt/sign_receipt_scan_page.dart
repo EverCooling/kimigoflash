@@ -29,6 +29,7 @@ class _SignReceiptScanPageState extends State<SignReceiptScanPage> {
   String _statusMessage = '请在下方签名';
   List<String>? _receiptImageUrls;
   String? _signatureImageUrl;
+  String? _currentOrderNumber; // 新增：当前扫描的单号
 
   final AuthApi _authApi = AuthApi();
 
@@ -50,27 +51,26 @@ class _SignReceiptScanPageState extends State<SignReceiptScanPage> {
 
     // 从deliveryItem中提取数据并填充表单
     if (data.containsKey('kyInStorageNumber')) {
-      formState.fields['kyInStorageNumber']?.didChange(data['kyInStorageNumber']);
+      final orderNumber = data['kyInStorageNumber'];
+      formState.fields['kyInStorageNumber']?.didChange(orderNumber);
+      _updateOrderNumber(orderNumber); // 新增：更新当前单号
     }
 
     // 可选：如果deliveryItem包含签收方式，也可以填充
     if (data.containsKey('signForType')) {
       final signForType = data['signForType'];
-      final signMethod = _getSignMethodFromType(signForType);
+      final signMethod = _getSignMethodValue(signForType);
       if (signMethod != null) {
         formState.fields['signMethod']?.didChange(signMethod);
       }
     }
   }
 
-  // 根据签收类型值获取对应的签收方式文本
-  String? _getSignMethodFromType(int? type) {
-    switch (type) {
-      case 1: return '本人签收';
-      case 2: return '自提签收';
-      case 3: return '其他签收';
-      default: return null;
-    }
+  // 新增：更新当前单号并刷新界面
+  void _updateOrderNumber(String? orderNumber) {
+    setState(() {
+      _currentOrderNumber = orderNumber;
+    });
   }
 
   Future<void> _verifyOrder(String orderNumber) async {
@@ -83,6 +83,7 @@ class _SignReceiptScanPageState extends State<SignReceiptScanPage> {
       });
       if (response.code == 200) {
         Get.snackbar('成功', '单号验证成功');
+        _updateOrderNumber(orderNumber); // 新增：验证成功后更新单号
       } else {
         Get.snackbar('失败', response.msg ?? '验证失败');
       }
@@ -188,7 +189,9 @@ class _SignReceiptScanPageState extends State<SignReceiptScanPage> {
                         }
                       },
                       onSubmitted: (value) async {
-                        if (value != null) await _verifyOrder(value);
+                        if (value != null) {
+                          await _verifyOrder(value);
+                        }
                       },
                       validator: (value) {
                         if (value == null || value.isEmpty) {
@@ -244,8 +247,9 @@ class _SignReceiptScanPageState extends State<SignReceiptScanPage> {
 
                     // 图片上传区域
                     SizedBox(height: 8),
-                    // 图片上传
+                    // 图片上传 - 传递当前单号
                     MultiImagePicker(
+                      orderNumber: _currentOrderNumber, // 关键：传递当前单号
                       maxCount: 3,
                       onImageUploaded: (imagePaths) {
                         _receiptImageUrls = imagePaths;

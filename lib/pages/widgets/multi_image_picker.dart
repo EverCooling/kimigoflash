@@ -1,15 +1,17 @@
 import 'dart:io';
-
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:kimiflash/pages/widgets/loading_manager.dart';
 import 'package:kimiflash/theme/app_colors.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:wechat_assets_picker/wechat_assets_picker.dart';
 import 'package:wechat_camera_picker/wechat_camera_picker.dart';
 import 'dart:convert';
 import 'package:photo_view/photo_view.dart';
 import 'package:photo_view/photo_view_gallery.dart';
-
+import 'package:image_watermark/image_watermark.dart'; // 引入水印库
+import 'package:location/location.dart'; // 引入定位库
 import '../../http/api/auth_api.dart';
 
 class MultiImagePicker extends StatefulWidget {
@@ -17,6 +19,11 @@ class MultiImagePicker extends StatefulWidget {
   final ValueChanged<List<AssetEntity>>? onChanged;
   final List<AssetEntity>? initialValue;
   final Function(List<String>) onImageUploaded;
+  final String? orderNumber; // 单号参数
+  final double? watermarkX;    // 水印X坐标
+  final double? watermarkY;    // 水印Y坐标
+  final double? textSize;      // 水印文字大小
+  final double? textPadding;   // 文字与背景的边距
 
   const MultiImagePicker({
     Key? key,
@@ -24,6 +31,11 @@ class MultiImagePicker extends StatefulWidget {
     this.onChanged,
     this.initialValue,
     required this.onImageUploaded,
+    this.orderNumber,
+    this.watermarkX = 50,
+    this.watermarkY = 50,
+    this.textSize = 16.0,     // 文字大小默认16
+    this.textPadding = 8.0,    // 边距默认8
   }) : super(key: key);
 
   @override
@@ -33,11 +45,40 @@ class MultiImagePicker extends StatefulWidget {
 class _MultiImagePickerState extends State<MultiImagePicker> {
   late List<AssetEntity> _selectedAssets;
   List<String> _uploadedUrls = [];
+  LocationData? _locationData;
+  bool _locationPermissionGranted = false;
 
   @override
   void initState() {
     super.initState();
     _selectedAssets = widget.initialValue ?? [];
+    _checkLocationPermission();
+  }
+
+  // 检查并请求位置权限
+  Future<void> _checkLocationPermission() async {
+    final location = Location();
+    bool serviceEnabled;
+    PermissionStatus permissionGranted;
+
+    serviceEnabled = await location.serviceEnabled();
+    if (!serviceEnabled) {
+      serviceEnabled = await location.requestService();
+      if (!serviceEnabled) return;
+    }
+
+    permissionGranted = await location.hasPermission();
+    if (permissionGranted == PermissionStatus.denied) {
+      permissionGranted = await location.requestPermission();
+      if (permissionGranted != PermissionStatus.granted) return;
+    }
+
+    try {
+      _locationData = await location.getLocation();
+      _locationPermissionGranted = true;
+    } catch (e) {
+      print('获取位置失败: $e');
+    }
   }
 
   @override
@@ -203,17 +244,14 @@ class _MultiImagePickerState extends State<MultiImagePicker> {
     widget.onChanged?.call(_selectedAssets);
   }
 
-  // 预览图片（支持滚动和点击退出）
   Future<void> _previewImage(int index) async {
     if (_selectedAssets.isEmpty) return;
 
-    // 加载所有图片文件
     final List<File?> files = [];
     for (var asset in _selectedAssets) {
       files.add(await asset.file);
     }
 
-    // 过滤空文件
     final validFiles = files.where((file) => file != null).toList();
     if (validFiles.isEmpty) return;
 
@@ -230,9 +268,9 @@ class _MultiImagePickerState extends State<MultiImagePicker> {
           ),
           backgroundColor: Colors.black,
           body: GestureDetector(
-            onTap: () => Navigator.pop(context), // 点击任意位置退出预览
+            onTap: () => Navigator.pop(context),
             child: PhotoViewGallery.builder(
-              scrollPhysics: const BouncingScrollPhysics(), // 启用滚动效果
+              scrollPhysics: const BouncingScrollPhysics(),
               itemCount: validFiles.length,
               builder: (context, index) {
                 final file = validFiles[index];
@@ -254,22 +292,30 @@ class _MultiImagePickerState extends State<MultiImagePicker> {
     );
   }
 
-  // 上传选中的图片
   Future<void> _uploadSelectedImages() async {
     if (_selectedAssets.isEmpty) return;
 
     try {
       final List<String> uploadedUrls = [];
       HUD.show(context);
+
       for (var asset in _selectedAssets) {
         final File? file = await asset.file;
         if (file != null) {
-          final response = await AuthApi().uploadFile(file);
+          File? watermarkedFile;
+
+          // 关键修复：取消单号判断的注释，并优化条件
+          if (widget.orderNumber != null && widget.orderNumber!.isNotEmpty) {
+            watermarkedFile = await _addTextWatermarkToImage(file);
+          }
+
+          final response = await AuthApi().uploadFile(watermarkedFile ?? file);
           if (response.data != null) {
             uploadedUrls.add(response.data!['value']);
           }
         }
       }
+
       HUD.hide();
       setState(() {
         _uploadedUrls = uploadedUrls;
@@ -285,6 +331,53 @@ class _MultiImagePickerState extends State<MultiImagePicker> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('图片上传失败: $e')),
       );
+    }
+  }
+
+  Future<File> _addTextWatermarkToImage(File imageFile) async {
+    try {
+      final now = DateTime.now();
+      final formattedTime = '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')} '
+          '${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}';
+
+      String watermarkText = '单号: ${widget.orderNumber}\n';
+
+      if (_locationPermissionGranted && _locationData != null) {
+        watermarkText += '经纬度: ${_locationData!.longitude.toString()}, ${_locationData!.latitude.toString()}\n';
+      } else {
+        watermarkText += '经纬度: 获取失败\n';
+      }
+
+      watermarkText += '时间: $formattedTime';
+
+      final Uint8List imgBytes = await imageFile.readAsBytes();
+
+      // 核心修改：黑底白字效果
+      final watermarkedImg = await ImageWatermark.addTextWatermark(
+        imgBytes: imgBytes,
+        watermarkText: watermarkText,
+        dstX: 100,
+        dstY: 100,
+        color: Colors.white,        // 文字边距
+      );
+
+      // 优化文件路径：确保目录存在
+      final tempDir = await getTemporaryDirectory();
+      final orderDir = widget.orderNumber != null
+          ? '${tempDir.path}/${widget.orderNumber}'
+          : tempDir.path;
+
+      // 确保目录存在
+      await Directory(orderDir).create(recursive: true);
+
+      final tempFilePath = '$orderDir/${DateTime.now().millisecondsSinceEpoch}_watermark.jpg';
+      final watermarkedFile = File(tempFilePath);
+
+      await watermarkedFile.writeAsBytes(watermarkedImg);
+      return watermarkedFile;
+    } catch (e) {
+      print('添加水印失败: $e');
+      return imageFile;
     }
   }
 }
