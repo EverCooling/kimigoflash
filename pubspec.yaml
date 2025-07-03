@@ -67,6 +67,7 @@ dependencies:
   url_launcher: ^6.3.1
   wechat_camera_picker: ^4.3.7
   liquid_pull_to_refresh: ^3.0.1
+  image_watermark: ^0.1.0
 
 dev_dependencies:
   flutter_test:

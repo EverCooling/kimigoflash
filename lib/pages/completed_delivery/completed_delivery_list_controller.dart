@@ -6,28 +6,28 @@ import 'package:get/get.dart';
 
 
 class CompletedDeliveryListController extends GetxController {
-  final trackingNumber = ''.obs;
+  final kyInStorageNumber = ''.obs;
   String? selectedDate;
   final selectedMethod = '全部'.obs;
 
   final deliveryMethods = ['全部', '上门', '自提柜自提'];
   final allItems = <Map<String, dynamic>>[
     {
-      'trackingNumber': '20231001001',
+      'kyInStorageNumber': '20231001001',
       'recipientName': '张三',
       'address': '北京市朝阳区XX街道XX号',
       'deliveryMethod': '上门',
       'signed': true,
     },
     {
-      'trackingNumber': '20231001002',
+      'kyInStorageNumber': '20231001002',
       'recipientName': '李四',
       'address': '上海市浦东新区XX路XX弄',
       'deliveryMethod': '自提柜自提',
       'signed': false,
     },
     {
-      'trackingNumber': '20231001003',
+      'kyInStorageNumber': '20231001003',
       'recipientName': '王五',
       'address': '广州市天河区XX大道XX号',
       'deliveryMethod': '上门',
@@ -41,8 +41,8 @@ class CompletedDeliveryListController extends GetxController {
     filteredItems.value = allItems.where((item) {
       final bool matchMethod =
           selectedMethod.value == '全部' || item['deliveryMethod'] == selectedMethod.value;
-      final bool matchTracking = trackingNumber.value.isEmpty ||
-          (item['trackingNumber']?.toString() ?? '').contains(trackingNumber.value);
+      final bool matchTracking = kyInStorageNumber.value.isEmpty ||
+          (item['kyInStorageNumber']?.toString() ?? '').contains(kyInStorageNumber.value);
       return matchMethod && matchTracking;
     }).toList();
   }
@@ -60,8 +60,8 @@ class CompletedDeliveryListController extends GetxController {
     }
   }
 
-  void navigateToExceptionReport(String trackingNumber) {
-    Get.toNamed('/exception-report', arguments: {'trackingNumber': trackingNumber});
+  void navigateToExceptionReport(String kyInStorageNumber) {
+    Get.toNamed('/exception-report', arguments: {'kyInStorageNumber': kyInStorageNumber});
   }
 
   void markAsSigned(Map<String, dynamic> item) {

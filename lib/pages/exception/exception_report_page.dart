@@ -108,6 +108,9 @@ class _ExceptionReportPageState extends State<ExceptionReportPage> {
                   if (value == null || value.isEmpty) {
                     return '请输入或扫描订单号';
                   }
+                  if (!RegExp(r'^(GR|UKG).+').hasMatch(value)) {
+                    return '订单号需以GR或UKG开头';
+                  }
                   return null;
                 },
               ),

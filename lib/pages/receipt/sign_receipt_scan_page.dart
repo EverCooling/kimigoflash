@@ -50,7 +50,7 @@ class _SignReceiptScanPageState extends State<SignReceiptScanPage> {
 
     // 从deliveryItem中提取数据并填充表单
     if (data.containsKey('kyInStorageNumber')) {
-      formState.fields['trackingNumber']?.didChange(data['kyInStorageNumber']);
+      formState.fields['kyInStorageNumber']?.didChange(data['kyInStorageNumber']);
     }
 
     // 可选：如果deliveryItem包含签收方式，也可以填充
@@ -116,7 +116,7 @@ class _SignReceiptScanPageState extends State<SignReceiptScanPage> {
         // 获取表单值
         final Map<String, dynamic> formData = form!.value;
         // 从表单中获取订单号（注意：这里使用正确的表单字段名）
-        final String kyInStorageNumber = formData['trackingNumber'] ?? '';
+        final String kyInStorageNumber = formData['kyInStorageNumber'] ?? '';
         final String signMethod = formData['signMethod'] ?? '';
 
         // 验证订单号是否存在
@@ -174,7 +174,7 @@ class _SignReceiptScanPageState extends State<SignReceiptScanPage> {
                   children: [
                     SizedBox(height: 20),
                     CustomTextField(
-                      name: 'trackingNumber',
+                      name: 'kyInStorageNumber',
                       labelText: '扫描单号',
                       enabled: true,
                       hintText: '请输入运单号',
@@ -183,7 +183,7 @@ class _SignReceiptScanPageState extends State<SignReceiptScanPage> {
                       onSuffixPressed: () async {
                         final barcodeResult = await Get.toNamed('/scanner');
                         if (barcodeResult != null) {
-                          _formKey.currentState?.fields['trackingNumber']?.didChange(barcodeResult);
+                          _formKey.currentState?.fields['kyInStorageNumber']?.didChange(barcodeResult);
                           await _verifyOrder(barcodeResult);
                         }
                       },
@@ -193,6 +193,9 @@ class _SignReceiptScanPageState extends State<SignReceiptScanPage> {
                       validator: (value) {
                         if (value == null || value.isEmpty) {
                           return '请输入或扫描订单号';
+                        }
+                        if (!RegExp(r'^(GR|UKG).+').hasMatch(value)) {
+                          return '订单号需以GR或UKG开头';
                         }
                         return null;
                       },

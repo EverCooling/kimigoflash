@@ -67,7 +67,7 @@ class _CompletedDeliveryListPageState extends State<CompletedDeliveryListPage> {
 
                     // 单号输入框
                     TextFormField(
-                      onChanged: controller.trackingNumber,
+                      onChanged: controller.kyInStorageNumber,
                       decoration: const InputDecoration(labelText: '单号'),
                     ),
                   ],
@@ -89,7 +89,7 @@ class _CompletedDeliveryListPageState extends State<CompletedDeliveryListPage> {
                       title: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text('单号：${item['trackingNumber']}'),
+                          Text('单号：${item['kyInStorageNumber']}'),
                           const SizedBox(height: 4),
                           Text('收件人：${item['recipientName']}'),
                           const SizedBox(height: 4),
@@ -125,7 +125,7 @@ class _CompletedDeliveryListPageState extends State<CompletedDeliveryListPage> {
                             ),
                           ElevatedButton(
                             onPressed: () =>
-                                controller.navigateToExceptionReport(item['trackingNumber']),
+                                controller.navigateToExceptionReport(item['kyInStorageNumber']),
                             style: ElevatedButton.styleFrom(
                               backgroundColor: Colors.redAccent,
                               padding: EdgeInsets.symmetric(horizontal: 8),

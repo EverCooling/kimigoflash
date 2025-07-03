@@ -26,7 +26,6 @@ class _OutboundScanPageState extends State<OutboundScanPage> {
   @override
   void initState() {
     super.initState();
-    controller.courierController.text = '张三';
   }
 
   Future<void> _verifyOrder(String orderNumber) async {
@@ -186,7 +185,7 @@ class _OutboundScanPageState extends State<OutboundScanPage> {
                         ),
                         SizedBox(width: 16),
                         Expanded(
-                          child: Container(
+                          child: SizedBox(
                             height: 400,
                             child: ListView(
                               shrinkWrap: true,

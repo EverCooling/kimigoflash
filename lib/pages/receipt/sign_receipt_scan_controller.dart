@@ -4,7 +4,7 @@ import 'package:get/get.dart';
 
 class SignReceiptScanController extends GetxController {
   // 表单字段
-  final trackingNumber = ''.obs;
+  final kyInStorageNumber = ''.obs;
   final selectedMethod = Rx<String?>(null);
   final uploadedImage = Rx<String?>(null);
 
@@ -16,7 +16,7 @@ class SignReceiptScanController extends GetxController {
 
   // 提交逻辑
   void submit() {
-    if (trackingNumber.value.isEmpty || selectedMethod.value == null) {
+    if (kyInStorageNumber.value.isEmpty || selectedMethod.value == null) {
       Get.snackbar('错误', '请填写必要信息');
       return;
     }
@@ -25,7 +25,7 @@ class SignReceiptScanController extends GetxController {
     Get.snackbar('成功', '已提交签收信息');
 
     // 清空表单
-    trackingNumber.value = '';
+    kyInStorageNumber.value = '';
     selectedMethod.value = null;
     uploadedImage.value = null;
     points.clear();

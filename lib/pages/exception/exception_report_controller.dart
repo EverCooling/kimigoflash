@@ -3,7 +3,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:get/get.dart';
 
 class ExceptionReportController extends GetxController {
-  final trackingNumber = ''.obs;
+  final kyInStorageNumber = ''.obs;
   final description = ''.obs;
   final selectedReason = ''.obs;
   final selectedImage = ''.obs;
