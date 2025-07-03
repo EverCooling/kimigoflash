@@ -16,13 +16,17 @@ class OutboundScanPage extends StatefulWidget {
 class _OutboundScanPageState extends State<OutboundScanPage> {
   final controller = Get.put(OutboundScanController());
   final AuthApi _authApi = AuthApi();
-  final _formKey = GlobalKey<FormBuilderState>(); // 新增表单键
+  final _formKey = GlobalKey<FormBuilderState>();
+
+  // 防止重复请求的标志
+  final _isProcessing = false.obs;
+  // 存储已处理的订单号集合（防止重复处理）
+  final _processedOrders = <String>{}.obs;
 
   @override
   void initState() {
     super.initState();
-    // 初始化时设置派件员信息（假设从其他地方获取）
-    controller.courierController.text = '张三'; // 示例值，实际应从登录信息或其他地方获取
+    controller.courierController.text = '张三';
   }
 
   Future<void> _verifyOrder(String orderNumber) async {
@@ -32,12 +36,26 @@ class _OutboundScanPageState extends State<OutboundScanPage> {
     }
 
     // 验证单号格式
-    final isValid = RegExp(r'^(GR|UKG).+').hasMatch(orderNumber);
-    if (!isValid) {
+    if (!RegExp(r'^(GR|UKG).+').hasMatch(orderNumber)) {
       Get.snackbar('错误', '单号格式有误，请以GR或UKG开头');
       return;
     }
 
+    // 检查是否正在处理中
+    if (_isProcessing.value) {
+      Get.snackbar('提示', '正在处理中，请稍候');
+      return;
+    }
+
+    // 检查是否已处理过该订单
+    if (_processedOrders.contains(orderNumber)) {
+      Get.snackbar('提示', '该单号已处理过');
+      return;
+    }
+
+    // 开始处理，设置标志
+    _isProcessing.value = true;
+    _processedOrders.add(orderNumber);
     HUD.show(context);
 
     try {
@@ -50,19 +68,20 @@ class _OutboundScanPageState extends State<OutboundScanPage> {
       if (response.code == 200) {
         Get.snackbar('成功', '单号验证成功');
         await _deliveryManBatchOutWarehouse(orderNumber);
-
-        // 扫描成功后添加到scannedList（响应式列表，计数自动更新）
         controller.scannedList.add(orderNumber);
-
-        // 清空输入框
         controller.scanController.clear();
-        _formKey.currentState!.reset(); // 重置表单状态
+        _formKey.currentState!.reset();
       } else {
         Get.snackbar('失败', response.msg ?? '验证失败');
+        // 验证失败，从已处理集合中移除
+        _processedOrders.remove(orderNumber);
       }
     } catch (e) {
       Get.snackbar('错误', e.toString());
+      _processedOrders.remove(orderNumber);
     } finally {
+      // 处理完成，重置标志
+      _isProcessing.value = false;
       HUD.hide();
     }
   }
@@ -74,7 +93,6 @@ class _OutboundScanPageState extends State<OutboundScanPage> {
       return;
     }
 
-    HUD.show(context);
     try {
       final uploadResponse = await _authApi.DeliveryManBatchOutWarehouse({
         'kyInStorageNumberList': [orderNumber],
@@ -83,16 +101,12 @@ class _OutboundScanPageState extends State<OutboundScanPage> {
 
       if (uploadResponse.code == 200) {
         Get.snackbar('上传成功', '单号已上传');
-
-        // 上传成功后添加到uploadedList（响应式列表，计数自动更新）
         controller.uploadedList.add(orderNumber);
       } else {
         Get.snackbar('上传失败', uploadResponse.msg ?? '上传出错');
       }
     } catch (e) {
       Get.snackbar('上传异常', e.toString());
-    } finally {
-      HUD.hide();
     }
   }
 
@@ -102,11 +116,9 @@ class _OutboundScanPageState extends State<OutboundScanPage> {
       appBar: AppBar(title: Text('出仓扫描')),
       body: Column(
         children: [
-          // 可滑动的内容区域
           Expanded(
             child: SingleChildScrollView(
               padding: EdgeInsets.all(16.0),
-              physics: AlwaysScrollableScrollPhysics(),
               child: FormBuilder(
                 key: _formKey,
                 child: Column(
@@ -116,15 +128,9 @@ class _OutboundScanPageState extends State<OutboundScanPage> {
                       name: 'courier',
                       labelText: '所属派件员',
                       controller: controller.courierController,
-                      enabled: false, // 禁用编辑
+                      enabled: false,
                       prefixIcon: Icons.person_outline,
-                      hintText: '',
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return '派件员信息不能为空';
-                        }
-                        return null;
-                      },
+                      validator: (value) => value?.isEmpty ?? true ? '派件员信息不能为空' : null,
                     ),
                     SizedBox(height: 20),
                     CustomTextField(
@@ -141,9 +147,7 @@ class _OutboundScanPageState extends State<OutboundScanPage> {
                           await _verifyOrder(barcodeResult);
                         }
                       },
-                      onSubmitted: (value) async {
-                        if (value != null) await _verifyOrder(value);
-                      },
+                      onSubmitted: (value) => value != null ? _verifyOrder(value) : null,
                       validator: (value) {
                         if (value == null || value.isEmpty) {
                           return '请输入或扫描订单号';
@@ -168,15 +172,13 @@ class _OutboundScanPageState extends State<OutboundScanPage> {
                               children: [
                                 Center(child: Text('已扫描 (${controller.scannedList.length})', style: TextStyle(fontWeight: FontWeight.bold))),
                                 Divider(),
-                                Obx(() {
-                                  return Column(
-                                    children: controller.scannedList.map((item) => ListTile(
-                                      title: Text(item),
-                                      minTileHeight: 10,
-                                      contentPadding: EdgeInsets.all(0),
-                                    )).toList(),
-                                  );
-                                }),
+                                Obx(() => Column(
+                                  children: controller.scannedList.map((item) => ListTile(
+                                    title: Text(item),
+                                    minTileHeight: 10,
+                                    contentPadding: EdgeInsets.zero,
+                                  )).toList(),
+                                )),
                               ],
                             ),
                           ),
@@ -191,15 +193,13 @@ class _OutboundScanPageState extends State<OutboundScanPage> {
                               children: [
                                 Center(child: Text('已上传 (${controller.uploadedList.length})', style: TextStyle(fontWeight: FontWeight.bold))),
                                 Divider(),
-                                Obx(() {
-                                  return Column(
-                                    children: controller.uploadedList.map((item) => ListTile(
-                                      title: Text(item),
-                                      minTileHeight: 10,
-                                      contentPadding: EdgeInsets.all(0),
-                                    )).toList(),
-                                  );
-                                }),
+                                Obx(() => Column(
+                                  children: controller.uploadedList.map((item) => ListTile(
+                                    title: Text(item),
+                                    minTileHeight: 10,
+                                    contentPadding: EdgeInsets.zero,
+                                  )).toList(),
+                                )),
                               ],
                             ),
                           ),
@@ -212,40 +212,44 @@ class _OutboundScanPageState extends State<OutboundScanPage> {
             ),
           ),
 
-          // 固定底部提交按钮
-          Padding(
+          // 底部按钮区域
+          Obx(() => Padding(
             padding: EdgeInsets.all(16.0),
             child: ElevatedButton(
-              onPressed: () {
-                // 验证所有表单字段
-                if (_formKey.currentState!.validate()) {
-                  // 这里可以添加批量上传功能
-                  if (controller.scannedList.isNotEmpty) {
-                    _batchUpload();
-                  } else {
-                    Get.snackbar('提示', '没有可上传的订单号');
-                  }
-                }
-              },
+              onPressed: _isProcessing.value || controller.scannedList.isEmpty
+                  ? null
+                  : _batchUpload,
               style: ElevatedButton.styleFrom(
                 minimumSize: Size(double.infinity, 50),
               ),
-              child: Text('批量上传'),
+              child: _isProcessing.value
+                  ? Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  CircularProgressIndicator(color: Colors.white),
+                  SizedBox(width: 10),
+                  Text('处理中...'),
+                ],
+              )
+                  : Text('批量上传'),
             ),
-          ),
+          )),
         ],
       ),
     );
   }
 
-  // 批量上传功能
   Future<void> _batchUpload() async {
     if (controller.scannedList.isEmpty) {
       Get.snackbar('提示', '没有可上传的订单号');
       return;
     }
 
+    // 防止重复点击
+    if (_isProcessing.value) return;
+    _isProcessing.value = true;
     HUD.show(context);
+
     try {
       final uploadResponse = await _authApi.DeliveryManBatchOutWarehouse({
         'kyInStorageNumberList': controller.scannedList,
@@ -254,16 +258,16 @@ class _OutboundScanPageState extends State<OutboundScanPage> {
 
       if (uploadResponse.code == 200) {
         Get.snackbar('上传成功', '${controller.scannedList.length}个单号已上传');
-
-        // 批量上传成功后更新两个列表
         controller.uploadedList.addAll(controller.scannedList);
         controller.scannedList.clear();
+        _processedOrders.clear(); // 清空已处理集合
       } else {
         Get.snackbar('上传失败', uploadResponse.msg ?? '上传出错');
       }
     } catch (e) {
       Get.snackbar('上传异常', e.toString());
     } finally {
+      _isProcessing.value = false;
       HUD.hide();
     }
   }
