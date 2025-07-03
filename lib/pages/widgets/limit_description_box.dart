@@ -26,7 +26,27 @@ class ExceptionDescriptionField extends StatelessWidget {
           decoration: InputDecoration(
             labelText: '异常描述',
             hintText: '请输入详细异常情况（最多$maxLength字）',
-            border: OutlineInputBorder(),
+            // 红色边框设置
+            border: OutlineInputBorder(
+              borderSide: BorderSide(color: Colors.red),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderSide: BorderSide(color: Colors.red),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderSide: BorderSide(color: Colors.red.shade700, width: 2),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            errorBorder: OutlineInputBorder(
+              borderSide: BorderSide(color: Colors.red),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            focusedErrorBorder: OutlineInputBorder(
+              borderSide: BorderSide(color: Colors.red.shade700, width: 2),
+              borderRadius: BorderRadius.circular(8),
+            ),
           ),
           maxLines: 3,
           maxLength: maxLength,
@@ -57,7 +77,7 @@ class ExceptionDescriptionField extends StatelessWidget {
   // 构建字数提示组件
   Widget _buildCharacterCountIndicator(String fieldName, BuildContext context) {
     return StreamBuilder<String>(
-      stream: FormBuilder.of(context)?.fields[fieldName]?.value, // 使用value流并转换为String类型
+      stream: FormBuilder.of(context)?.fields[fieldName]?.value,
       builder: (context, snapshot) {
         final value = snapshot.data ?? '';
         final length = value.length;
