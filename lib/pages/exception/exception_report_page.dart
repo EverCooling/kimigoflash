@@ -1,14 +1,13 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:flutter_form_builder/flutter_form_builder.dart';
 import 'package:kimiflash/http/api/auth_api.dart';
+import 'package:kimiflash/pages/widgets/limit_description_box.dart';
 import 'package:kimiflash/pages/widgets/loading_manager.dart';
 import 'package:kimiflash/pages/widgets/custom_dropdown_field.dart';
 import 'package:kimiflash/pages/widgets/multi_image_picker.dart';
 import 'package:kimiflash/pages/widgets/sign_method_bottom_sheet.dart';
 import 'package:kimiflash/pages/exception/exception_report_controller.dart';
-
 import '../widgets/custom_text_field.dart';
 
 class ExceptionReportPage extends StatefulWidget {
@@ -25,8 +24,6 @@ class _ExceptionReportPageState extends State<ExceptionReportPage> {
   List<String>? _receiptImageUrls;
   final AuthApi _authApi = AuthApi();
   String? deliveryFailType;
-  int _currentLength = 0; // 记录当前输入字数
-  final int _maxLength = 200; // 最大字数限制
 
   final _formKey = GlobalKey<FormBuilderState>();
 
@@ -157,52 +154,10 @@ class _ExceptionReportPageState extends State<ExceptionReportPage> {
               ),
               SizedBox(height: 20),
 
-              // 异常描述输入框（带字数限制）
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  FormBuilderTextField(
-                    name: 'failTitle',
-                    decoration: InputDecoration(
-                      labelText: '异常描述',
-                      hintText: '请输入详细异常情况（最多200字）',
-                      border: OutlineInputBorder(),
-                    ),
-                    maxLines: 3,
-                    maxLength: _maxLength, // 设置最大长度
-                    maxLengthEnforcement: MaxLengthEnforcement.enforced, // 强制限制字数
-                    onChanged: (value) {
-                      setState(() {
-                        _currentLength = value?.length ?? 0;
-                      });
-                    },
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return '请输入异常描述';
-                      }
-                      if (value.length > _maxLength) {
-                        return '不能超过200字';
-                      }
-                      return null;
-                    },
-                  ),
-                  // 字数提示
-                  Padding(
-                    padding: const EdgeInsets.only(top: 4),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      children: [
-                        Text(
-                          '$_currentLength/$_maxLength',
-                          style: TextStyle(
-                            color: _currentLength > _maxLength ? Colors.red : Colors.grey,
-                            fontSize: 12,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
+              // 调用封装的异常描述组件
+              ExceptionDescriptionField(
+                name: 'failTitle',
+                maxLength: 200,
               ),
 
               SizedBox(height: 20),
