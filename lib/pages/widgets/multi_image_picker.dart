@@ -48,6 +48,7 @@ class _MultiImagePickerState extends State<MultiImagePicker> {
   List<String> _watermarkedPaths = []; // 存储带水印的图片路径
   LocationData? _locationData;
   bool _locationPermissionGranted = false;
+  String? _previousOrderNumber; // 记录上一次的订单号
 
   @override
   void initState() {
@@ -55,6 +56,28 @@ class _MultiImagePickerState extends State<MultiImagePicker> {
     _selectedAssets = widget.initialValue ?? [];
     _checkLocationPermission();
     _watermarkedPaths = List.filled(_selectedAssets.length, ''); // 初始化路径列表
+    _previousOrderNumber = widget.orderNumber; // 初始化记录
+  }
+
+  @override
+  void didUpdateWidget(covariant MultiImagePicker oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // 当orderNumber参数变化时，重新处理已选择的图片
+    if (widget.orderNumber != _previousOrderNumber && widget.orderNumber != null) {
+      _reprocessImagesWithNewOrderNumber();
+      _previousOrderNumber = widget.orderNumber;
+    }
+  }
+
+  // 用新的订单号重新处理所有已选择的图片
+  Future<void> _reprocessImagesWithNewOrderNumber() async {
+    if (_selectedAssets.isEmpty || widget.orderNumber == null) return;
+
+    setState(() {
+      _watermarkedPaths = List.filled(_selectedAssets.length, ''); // 清空原有水印路径
+    });
+
+    await _uploadSelectedImages(); // 重新上传图片，生成新的水印
   }
 
   // 检查并请求位置权限
@@ -353,7 +376,7 @@ class _MultiImagePickerState extends State<MultiImagePicker> {
   }
 
   Future<void> _uploadSelectedImages() async {
-    if (_selectedAssets.isEmpty) return;
+    if (_selectedAssets.isEmpty || widget.orderNumber == null) return;
 
     try {
       final List<String> uploadedUrls = [];

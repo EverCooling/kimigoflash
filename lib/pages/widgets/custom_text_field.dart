@@ -1,5 +1,3 @@
-
-
 import 'package:flutter/material.dart';
 import 'package:flutter_form_builder/flutter_form_builder.dart';
 
@@ -14,6 +12,8 @@ class CustomTextField extends StatelessWidget {
   final IconData? suffixIcon;
   final FormFieldValidator<String>? validator;
   final bool enabled;
+  final bool autofocus;
+  final bool loseFocusOnSubmitted; // 新增：输入结束后是否失去焦点
 
   const CustomTextField({
     super.key,
@@ -27,6 +27,8 @@ class CustomTextField extends StatelessWidget {
     this.suffixIcon,
     this.validator,
     this.enabled = true,
+    this.autofocus = true,
+    this.loseFocusOnSubmitted = true, // 默认输入结束后失去焦点
   });
 
   @override
@@ -36,6 +38,7 @@ class CustomTextField extends StatelessWidget {
       validator: validator,
       controller: controller,
       enabled: enabled,
+      autofocus: autofocus,
       decoration: InputDecoration(
         labelText: labelText,
         hintText: hintText,
@@ -58,7 +61,13 @@ class CustomTextField extends StatelessWidget {
             ? IconButton(icon: Icon(suffixIcon), onPressed: onSuffixPressed)
             : null,
       ),
-      onSubmitted: onSubmitted,
+      onSubmitted: (value) {
+        onSubmitted?.call(value);
+        if (loseFocusOnSubmitted) {
+          // 输入结束后自动失去焦点
+          FocusScope.of(context).unfocus();
+        }
+      },
     );
   }
 }
