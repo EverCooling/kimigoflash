@@ -65,7 +65,7 @@ class _MultiImagePickerState extends State<MultiImagePicker> {
   void didUpdateWidget(covariant MultiImagePicker oldWidget) {
     super.didUpdateWidget(oldWidget);
     // 当orderNumber参数变化时，重新处理已选择的图片
-    if (widget.orderNumber != _previousOrderNumber && widget.orderNumber != null) {
+    if (widget.orderNumber != _previousOrderNumber) {
       _reprocessImagesWithNewOrderNumber();
       _previousOrderNumber = widget.orderNumber;
     }
@@ -73,13 +73,13 @@ class _MultiImagePickerState extends State<MultiImagePicker> {
 
   // 用新的订单号重新处理所有已选择的图片
   Future<void> _reprocessImagesWithNewOrderNumber() async {
-    if (_selectedAssets.isEmpty || widget.orderNumber == null) return;
+    if (_selectedAssets.isEmpty) return;
 
     setState(() {
       _watermarkedPaths = List.filled(_selectedAssets.length, ''); // 清空原有水印路径
     });
 
-    await _uploadSelectedImages(); // 重新上传图片，生成新的水印
+    await _processSelectedImages(); // 重新上传图片，生成新的水印
   }
 
   // 检查并请求位置权限
@@ -293,10 +293,8 @@ class _MultiImagePickerState extends State<MultiImagePicker> {
         _watermarkedPaths.add(''); // 新增图片时初始化空路径
       });
       widget.onChanged?.call(_selectedAssets);
-      // 拍照后立即处理图片
-      if (widget.orderNumber != null) {
-        await _uploadSelectedImages();
-      }
+      // 优化：无论orderNumber是否存在，都尝试处理图片（若orderNumber为空则不添加水印）
+      await _processSelectedImages();
     }
   }
 
@@ -317,9 +315,68 @@ class _MultiImagePickerState extends State<MultiImagePicker> {
         _watermarkedPaths = List.filled(_selectedAssets.length, ''); // 批量初始化路径
       });
       widget.onChanged?.call(_selectedAssets);
-      // 选择相册图片后立即处理
-      if (widget.orderNumber != null) {
-        await _uploadSelectedImages();
+      // 优化：无论orderNumber是否存在，都尝试处理图片（若orderNumber为空则不添加水印）
+      await _processSelectedImages();
+    }
+  }
+
+  // 统一处理选中的图片（添加水印和上传）
+  Future<void> _processSelectedImages() async {
+    if (_selectedAssets.isEmpty) return;
+
+    // 显示加载状态
+    if (mounted) {
+      HUD.show(context);
+    }
+
+    try {
+      final List<String> uploadedUrls = [];
+
+      for (var i = 0; i < _selectedAssets.length; i++) {
+        final asset = _selectedAssets[i];
+        final file = await asset.file;
+        if (file != null) {
+          File? watermarkedFile;
+
+          // 当orderNumber存在时添加水印，否则直接使用原图
+          watermarkedFile = await _addTextWatermarkToImage(file);
+          if (watermarkedFile != null) {
+            _watermarkedPaths[i] = watermarkedFile.path;
+          }
+
+
+          // 上传图片
+          final response = await AuthApi().uploadFile(watermarkedFile ?? file);
+          if (response.data != null) {
+            uploadedUrls.add(response.data!['value']);
+          }
+        }
+      }
+
+      // 更新状态
+      if (mounted) {
+        setState(() {
+          _uploadedUrls = uploadedUrls;
+        });
+
+        if (_uploadedUrls.isNotEmpty) {
+          widget.onImageUploaded(_uploadedUrls);
+        }
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('图片处理完成')),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('图片处理失败: $e')),
+        );
+      }
+      print('图片处理异常: $e');
+    } finally {
+      if (mounted) {
+        HUD.hide();
       }
     }
   }
@@ -384,51 +441,6 @@ class _MultiImagePickerState extends State<MultiImagePicker> {
     );
   }
 
-  Future<void> _uploadSelectedImages() async {
-    if (_selectedAssets.isEmpty || widget.orderNumber == null) return;
-
-    try {
-      final List<String> uploadedUrls = [];
-      HUD.show(context);
-
-      for (var i = 0; i < _selectedAssets.length; i++) {
-        final asset = _selectedAssets[i];
-        final file = await asset.file;
-        if (file != null) {
-          File? watermarkedFile;
-
-          // 添加水印并保存路径
-          watermarkedFile = await _addTextWatermarkToImage(file);
-          if (watermarkedFile != null) {
-            _watermarkedPaths[i] = watermarkedFile.path;
-          }
-
-          // 上传图片
-          final response = await AuthApi().uploadFile(watermarkedFile ?? file);
-          if (response.data != null) {
-            uploadedUrls.add(response.data!['value']);
-          }
-        }
-      }
-
-      HUD.hide();
-      setState(() {
-        _uploadedUrls = uploadedUrls;
-      });
-
-      if (_uploadedUrls.isNotEmpty) {
-        widget.onImageUploaded(_uploadedUrls);
-      }
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('图片上传成功')),
-      );
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('图片上传失败: $e')),
-      );
-    }
-  }
-
   Future<File> _addTextWatermarkToImage(File imageFile) async {
     try {
       // 格式化日期
@@ -454,14 +466,16 @@ class _MultiImagePickerState extends State<MultiImagePicker> {
       final watermarkedImg = await ImageWatermark.addTextWatermark(
         imgBytes: imgBytes,
         watermarkText: watermarkText,
-        dstX: widget.watermarkX,
+        dstX: widget.watermarkX!,
         dstY: widget.watermarkY!,
-        color: Colors.white,                // 白色文字
+        color: Colors.white,
       );
 
       // 保存带水印的图片
       final tempDir = await getTemporaryDirectory();
-      final orderDir = '${tempDir.path}/${widget.orderNumber}';
+      final orderDir = widget.orderNumber != null
+          ? '${tempDir.path}/${widget.orderNumber}'
+          : '${tempDir.path}/no_order_watermark';
       await Directory(orderDir).create(recursive: true);
 
       final tempFilePath = '$orderDir/${now.millisecondsSinceEpoch}_watermark.jpg';
