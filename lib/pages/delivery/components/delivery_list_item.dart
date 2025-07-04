@@ -57,12 +57,12 @@ class DeliveryListItem extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const SizedBox(height: 10),
-                  Row(children: [
-                    Icon(Icons.shop_outlined, size: 16, color: Colors.red),
-                    const SizedBox(width: 4),
-                    Text('订单来源：${item['orderSource'] ?? ''}'),
-                  ]),
-                  const SizedBox(height: 10),
+                  // Row(children: [
+                  //   Icon(Icons.shop_outlined, size: 16, color: Colors.red),
+                  //   const SizedBox(width: 4),
+                  //   Text('订单来源：${item['orderSource'] ?? ''}'),
+                  // ]),
+                  // const SizedBox(height: 10),
                   Row(children: [
                     Icon(Icons.person_outline, size: 16, color: Colors.red),
                     const SizedBox(width: 4),
@@ -249,7 +249,7 @@ class DeliveryListItem extends StatelessWidget {
   // 修改导航方法，传递完整的deliveryItem
   void _navigateToSignPage(BuildContext context) {
     Get.toNamed(
-      '/sign-receipt-scan',
+      '/pending-delivery-detail',
       arguments: item, // 直接传递item作为deliveryItem
     );
   }
