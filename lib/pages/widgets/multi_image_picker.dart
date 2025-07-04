@@ -20,10 +20,11 @@ class MultiImagePicker extends StatefulWidget {
   final List<AssetEntity>? initialValue;
   final Function(List<String>) onImageUploaded;
   final String? orderNumber; // 单号参数
-  final double? watermarkX;    // 水印X坐标
-  final double? watermarkY;    // 水印Y坐标
+  final int? watermarkX;    // 水印X坐标
+  final int? watermarkY;    // 水印Y坐标
   final double? textSize;      // 水印文字大小
   final double? textPadding;   // 文字与背景的边距
+  final double? backgroundOpacity; // 背景透明度
 
   const MultiImagePicker({
     Key? key,
@@ -36,6 +37,7 @@ class MultiImagePicker extends StatefulWidget {
     this.watermarkY = 50,
     this.textSize = 16.0,     // 文字大小默认16
     this.textPadding = 8.0,    // 边距默认8
+    this.backgroundOpacity = 0.7, // 背景透明度默认0.7
   }) : super(key: key);
 
   @override
@@ -291,6 +293,10 @@ class _MultiImagePickerState extends State<MultiImagePicker> {
         _watermarkedPaths.add(''); // 新增图片时初始化空路径
       });
       widget.onChanged?.call(_selectedAssets);
+      // 拍照后立即处理图片
+      if (widget.orderNumber != null) {
+        await _uploadSelectedImages();
+      }
     }
   }
 
@@ -311,7 +317,10 @@ class _MultiImagePickerState extends State<MultiImagePicker> {
         _watermarkedPaths = List.filled(_selectedAssets.length, ''); // 批量初始化路径
       });
       widget.onChanged?.call(_selectedAssets);
-      await _uploadSelectedImages();
+      // 选择相册图片后立即处理
+      if (widget.orderNumber != null) {
+        await _uploadSelectedImages();
+      }
     }
   }
 
@@ -393,6 +402,7 @@ class _MultiImagePickerState extends State<MultiImagePicker> {
           if (watermarkedFile != null) {
             _watermarkedPaths[i] = watermarkedFile.path;
           }
+
           // 上传图片
           final response = await AuthApi().uploadFile(watermarkedFile ?? file);
           if (response.data != null) {
@@ -421,39 +431,40 @@ class _MultiImagePickerState extends State<MultiImagePicker> {
 
   Future<File> _addTextWatermarkToImage(File imageFile) async {
     try {
+      // 格式化日期
       final now = DateTime.now();
-      final formattedTime = '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')} '
-          '${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}';
+      final formattedDate = '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
+      final formattedTime = '${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}:${now.second.toString().padLeft(2, '0')}';
 
-      String watermarkText = '${widget.orderNumber}\n';
+      // 构建水印文本（订单号、经纬度、日期时间）
+      String watermarkText = '订单号: ${widget.orderNumber}\n';
 
       if (_locationPermissionGranted && _locationData != null) {
-        watermarkText += '${_locationData!.longitude.toString()}, ${_locationData!.latitude.toString()}\n';
+        watermarkText += '经纬度: ${_locationData!.longitude.toString()}, ${_locationData!.latitude.toString()}\n';
       } else {
-        watermarkText += '经纬度: 获取失败\n';
+        watermarkText += '经纬度: 位置获取失败\n';
       }
 
-      watermarkText += '$formattedTime';
+      watermarkText += '日期: $formattedDate\n';
+      watermarkText += '时间: $formattedTime';
 
       final Uint8List imgBytes = await imageFile.readAsBytes();
 
-      // 黑底白字水印
+      // 添加带黑色半透明背景的白色文字水印
       final watermarkedImg = await ImageWatermark.addTextWatermark(
         imgBytes: imgBytes,
         watermarkText: watermarkText,
-        dstX: 100,
-        dstY: 100,
-        color: Colors.white,
+        dstX: widget.watermarkX,
+        dstY: widget.watermarkY!,
+        color: Colors.white,                // 白色文字
       );
 
       // 保存带水印的图片
       final tempDir = await getTemporaryDirectory();
-      final orderDir = widget.orderNumber != null
-          ? '${tempDir.path}/${widget.orderNumber}'
-          : tempDir.path;
+      final orderDir = '${tempDir.path}/${widget.orderNumber}';
       await Directory(orderDir).create(recursive: true);
 
-      final tempFilePath = '$orderDir/${DateTime.now().millisecondsSinceEpoch}_watermark.jpg';
+      final tempFilePath = '$orderDir/${now.millisecondsSinceEpoch}_watermark.jpg';
       final watermarkedFile = File(tempFilePath);
       await watermarkedFile.writeAsBytes(watermarkedImg);
 
