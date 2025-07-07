@@ -13,7 +13,7 @@ class CustomTextField extends StatelessWidget {
   final FormFieldValidator<String>? validator;
   final bool enabled;
   final bool autofocus;
-  final TapRegionCallback? onTapOutside; // 新增：外部可监听点击外部事件
+  final TapRegionCallback? onTapOutside;
   final ValueChanged? onChanged;
 
   const CustomTextField({
@@ -30,7 +30,7 @@ class CustomTextField extends StatelessWidget {
     this.enabled = true,
     this.autofocus = false,
     this.onChanged,
-    this.onTapOutside, // 新增参数
+    this.onTapOutside,
   });
 
   @override
@@ -65,25 +65,12 @@ class CustomTextField extends StatelessWidget {
       ),
       onEditingComplete: () {
         FocusScope.of(context).unfocus();
-        print("onEditingComplete");
-      },
-      onTap: () {
-        print("onTap");
       },
       onTapOutside: (event) {
-        // 先执行内部逻辑（失去焦点）
         FocusScope.of(context).unfocus();
-        print("onTapOutside (内部)");
-
-        // 再触发外部回调
         onTapOutside?.call(event);
       },
-      onChanged: (value) {
-        FocusScope.of(context).unfocus();
-        onChanged?.call(value);
-
-        print("onChanged");
-      },
+      onChanged: onChanged,
       onSubmitted: (value) {
         onSubmitted?.call(value);
         FocusScope.of(context).unfocus();

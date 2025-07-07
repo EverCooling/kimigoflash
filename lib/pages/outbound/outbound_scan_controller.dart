@@ -27,25 +27,6 @@ class OutboundScanController extends GetxController {
   }
 
 
-  void submit() {
-    if (scanController.text.isNotEmpty) {
-      scannedList.add(scanController.text);
-      scanController.clear();
-    }
-  }
-
-  void upload() {
-    if (scannedList.isNotEmpty) {
-      uploadedList.addAll(scannedList);
-      scannedList.clear();
-    }
-  }
-
-  void onScanResult(String result) {
-    scanController.text = result;
-    submit();
-  }
-
   @override
   void onClose() {
     scanController.dispose();

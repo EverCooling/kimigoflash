@@ -71,9 +71,10 @@ class _OutboundScanPageState extends State<OutboundScanPage> {
         controller.scanController.clear();
         _formKey.currentState!.reset();
       } else {
+        controller.scannedList.add(orderNumber);
         Get.snackbar('失败', response.msg ?? '验证失败');
-        // 验证失败，从已处理集合中移除
-        _processedOrders.remove(orderNumber);
+          // 验证失败，从已处理集合中移除
+          _processedOrders.remove(orderNumber);
       }
     } catch (e) {
       Get.snackbar('错误', e.toString());
@@ -102,6 +103,8 @@ class _OutboundScanPageState extends State<OutboundScanPage> {
         Get.snackbar('上传成功', '单号已上传');
         controller.uploadedList.add(orderNumber);
       } else {
+        controller.uploadedList.add(orderNumber);
+
         Get.snackbar('上传失败', uploadResponse.msg ?? '上传出错');
       }
     } catch (e) {
