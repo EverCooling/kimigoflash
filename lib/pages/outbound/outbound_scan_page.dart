@@ -26,6 +26,13 @@ class _OutboundScanPageState extends State<OutboundScanPage> {
   @override
   void initState() {
     super.initState();
+    // 监听scannedList变化，确保UI更新
+    controller.scannedList.listen((list) {
+      if (mounted) setState(() {});
+    });
+    controller.uploadedList.listen((list) {
+      if (mounted) setState(() {});
+    });
   }
 
   Future<void> _verifyOrder(String orderNumber) async {
@@ -67,14 +74,16 @@ class _OutboundScanPageState extends State<OutboundScanPage> {
       if (response.code == 200) {
         Get.snackbar('成功', '单号验证成功');
         await _deliveryManBatchOutWarehouse(orderNumber);
+        // 使用响应式方法添加数据
         controller.scannedList.add(orderNumber);
         controller.scanController.clear();
         _formKey.currentState!.reset();
       } else {
-        controller.scannedList.add(orderNumber);
+        await _deliveryManBatchOutWarehouse(orderNumber);
+
         Get.snackbar('失败', response.msg ?? '验证失败');
-          // 验证失败，从已处理集合中移除
-          _processedOrders.remove(orderNumber);
+        // 验证失败，从已处理集合中移除
+        _processedOrders.remove(orderNumber);
       }
     } catch (e) {
       Get.snackbar('错误', e.toString());
@@ -103,8 +112,6 @@ class _OutboundScanPageState extends State<OutboundScanPage> {
         Get.snackbar('上传成功', '单号已上传');
         controller.uploadedList.add(orderNumber);
       } else {
-        controller.uploadedList.add(orderNumber);
-
         Get.snackbar('上传失败', uploadResponse.msg ?? '上传出错');
       }
     } catch (e) {
@@ -170,18 +177,28 @@ class _OutboundScanPageState extends State<OutboundScanPage> {
                         Expanded(
                           child: Container(
                             height: 400,
-                            child: ListView(
-                              shrinkWrap: true,
-                              physics: NeverScrollableScrollPhysics(),
+                            child: Column(
                               children: [
-                                Center(child: Text('已扫描 (${controller.scannedList.length})', style: TextStyle(fontWeight: FontWeight.bold))),
+                                // 使用Obx包裹计数显示
+                                Obx(() => Center(
+                                  child: Text(
+                                      '已扫描 (${controller.scannedList.length})',
+                                      style: TextStyle(fontWeight: FontWeight.bold)
+                                  ),
+                                )),
                                 Divider(),
-                                Obx(() => Column(
-                                  children: controller.scannedList.map((item) => ListTile(
-                                    title: Text(item),
-                                    minTileHeight: 10,
-                                    contentPadding: EdgeInsets.zero,
-                                  )).toList(),
+                                // 确保列表项在Obx中
+                                Obx(() => Expanded(
+                                  child: ListView.builder(
+                                    itemCount: controller.scannedList.length,
+                                    itemBuilder: (context, index) {
+                                      return ListTile(
+                                        title: Text(controller.scannedList[index]),
+                                        minTileHeight: 10,
+                                        contentPadding: EdgeInsets.zero,
+                                      );
+                                    },
+                                  ),
                                 )),
                               ],
                             ),
@@ -191,18 +208,26 @@ class _OutboundScanPageState extends State<OutboundScanPage> {
                         Expanded(
                           child: SizedBox(
                             height: 400,
-                            child: ListView(
-                              shrinkWrap: true,
-                              physics: NeverScrollableScrollPhysics(),
+                            child: Column(
                               children: [
-                                Center(child: Text('已上传 (${controller.uploadedList.length})', style: TextStyle(fontWeight: FontWeight.bold))),
+                                Obx(() => Center(
+                                  child: Text(
+                                      '已上传 (${controller.uploadedList.length})',
+                                      style: TextStyle(fontWeight: FontWeight.bold)
+                                  ),
+                                )),
                                 Divider(),
-                                Obx(() => Column(
-                                  children: controller.uploadedList.map((item) => ListTile(
-                                    title: Text(item),
-                                    minTileHeight: 10,
-                                    contentPadding: EdgeInsets.zero,
-                                  )).toList(),
+                                Obx(() => Expanded(
+                                  child: ListView.builder(
+                                    itemCount: controller.uploadedList.length,
+                                    itemBuilder: (context, index) {
+                                      return ListTile(
+                                        title: Text(controller.uploadedList[index]),
+                                        minTileHeight: 10,
+                                        contentPadding: EdgeInsets.zero,
+                                      );
+                                    },
+                                  ),
                                 )),
                               ],
                             ),
