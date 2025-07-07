@@ -161,138 +161,157 @@ class _SignReceiptScanPageState extends State<SignReceiptScanPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: Text('签收扫描')),
-      body: GestureDetector(
-        onTap: () {
-          FocusScope.of(context).unfocus();
-        },
-        child: Column(
-          children: [
-            // 可滚动的内容区域
-            Expanded(
-              child: SingleChildScrollView(
-                padding: EdgeInsets.all(16.0),
-                physics: AlwaysScrollableScrollPhysics(),
-                child: FormBuilder(
-                  key: _formKey,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      SizedBox(height: 20),
-                      CustomTextField(
-                        name: 'kyInStorageNumber',
-                        labelText: '扫描单号',
-                        enabled: true,
-                        hintText: '请输入运单号',
-                        prefixIcon: Icons.vertical_distribute,
-                        suffixIcon: Icons.barcode_reader,
-                        onSuffixPressed: () async {
-                          final barcodeResult = await Get.toNamed('/scanner');
-                          if (barcodeResult != null) {
-                            _formKey.currentState?.fields['kyInStorageNumber']?.didChange(barcodeResult);
-                            await _verifyOrder(barcodeResult);
-                          }
-                        },
-                        onSubmitted: (value) async {
-                          if (value != null) {
-                            await _verifyOrder(value);
-                          }
-                        },
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return '请输入或扫描订单号';
-                          }
-                          if (!RegExp(r'^(GR|UKG).+').hasMatch(value)) {
-                            return '订单号需以GR或UKG开头';
-                          }
-                          return null;
-                        },
-                      ),
-                      SizedBox(height: 20),
-
-                      CustomDropdownField(
-                        name: 'signMethod',
-                        labelText: '签收方式',
-                        items: controller.methods,
-                        initialValue: null,
-                        onTap: (context) async {
-                          final result = await SignMethodBottomSheet.show(
-                            context,
-                            methods: controller.methods,
-                            initialValue: null,
-                            title: '选择签收方式',
-                            titleStyle: TextStyle(fontSize: 20, color: Colors.blue),
-                            selectedColor: Colors.blue,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-                            ),
-                            additionalActions: [
-                              // Divider(),
-                              // ListTile(
-                              //   title: Text('取消', style: TextStyle(color: Colors.grey)),
-                              //   onTap: () => Navigator.pop(context),
-                              // ),
-                            ],
-                          );
-                          if (result != null) {
-                            print('选择的签收方式: ${result['value']}');
-                            return result['value'];
-                          }
-                          return null;
-                        },
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return '请选择签收方式';
-                          }
-                          return null;
-                        },
-                      ),
-                      // 签收方式
-                      SizedBox(height: 20),
-
-                      // 图片上传区域
-                      SizedBox(height: 8),
-                      // 图片上传 - 传递当前单号
-                      MultiImagePicker(
-                        orderNumber: _currentOrderNumber, // 关键：传递当前单号
-                        maxCount: 3,
-                        onImageUploaded: (imagePaths) {
-                          _receiptImageUrls = imagePaths;
-                        },
-                      ),
-                      SizedBox(height: 20),
-
-                      // 客户签字板
-                      SignaturePreview(
-                        onSignatureChanged: (url) async {
-                          print("客户签字: $url");
-                          setState(() {
-                            _signatureImageUrl = url;
-                            _statusMessage = url == null
-                                ? '签名已清除，请重新签名'
-                                : '签名已完成';
-                          });
-                        },
-                      ),
-                      SizedBox(height: 32),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-
-            // 底部固定提交按钮
-            Padding(
+      body: Column(
+        children: [
+          // 可滚动的内容区域
+          Expanded(
+            child: SingleChildScrollView(
               padding: EdgeInsets.all(16.0),
-              child: ElevatedButton(
-                onPressed: _submit,
-                style: ElevatedButton.styleFrom(
-                  minimumSize: Size(double.infinity, 50),
+              physics: AlwaysScrollableScrollPhysics(),
+              child: FormBuilder(
+                key: _formKey,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    SizedBox(height: 20),
+                    CustomTextField(
+                      name: 'kyInStorageNumber',
+                      labelText: '扫描单号',
+                      enabled: true,
+                      hintText: '请输入运单号',
+                      prefixIcon: Icons.vertical_distribute,
+                      suffixIcon: Icons.barcode_reader,
+                      onTapOutside: (event) {
+                        //失去焦点
+                        FocusScope.of(context).unfocus();
+                        final formState = _formKey.currentState;
+                        if (formState != null) {
+                          // 1. 获取当前输入的订单号
+                          final currentValue = formState.fields['kyInStorageNumber']?.value;
+
+                          if (currentValue != null && currentValue.isNotEmpty) {
+                            _updateOrderNumber(currentValue);
+                            // 2. 显示加载状态
+                            HUD.show(context);
+
+                            // 3. 调用校验接口
+                            _verifyOrder(currentValue).whenComplete(() {
+                              // 4. 隐藏加载状态
+                              HUD.hide();
+                            });
+                          } else {
+                            // 订单号为空时的处理
+                            Get.snackbar('提示', '请先输入或扫描订单号');
+                          }
+                        }
+                      },
+                      onSuffixPressed: () async {
+                        final barcodeResult = await Get.toNamed('/scanner');
+                        if (barcodeResult != null) {
+                          _formKey.currentState?.fields['kyInStorageNumber']?.didChange(barcodeResult);
+                          await _verifyOrder(barcodeResult);
+                        }
+                      },
+                      onSubmitted: (value) async {
+                        if (value != null) {
+                          await _verifyOrder(value);
+                        }
+                      },
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return '请输入或扫描订单号';
+                        }
+                        if (!RegExp(r'^(GR|UKG).+').hasMatch(value)) {
+                          return '订单号需以GR或UKG开头';
+                        }
+                        return null;
+                      },
+                    ),
+                    SizedBox(height: 20),
+
+                    CustomDropdownField(
+                      name: 'signMethod',
+                      labelText: '签收方式',
+                      items: controller.methods,
+                      initialValue: null,
+                      onTap: (context) async {
+                        final result = await SignMethodBottomSheet.show(
+                          context,
+                          methods: controller.methods,
+                          initialValue: null,
+                          title: '选择签收方式',
+                          titleStyle: TextStyle(fontSize: 20, color: Colors.blue),
+                          selectedColor: Colors.blue,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+                          ),
+                          additionalActions: [
+                            // Divider(),
+                            // ListTile(
+                            //   title: Text('取消', style: TextStyle(color: Colors.grey)),
+                            //   onTap: () => Navigator.pop(context),
+                            // ),
+                          ],
+                        );
+                        if (result != null) {
+                          print('选择的签收方式: ${result['value']}');
+                          return result['value'];
+                        }
+                        return null;
+                      },
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return '请选择签收方式';
+                        }
+                        return null;
+                      },
+                    ),
+                    // 签收方式
+                    SizedBox(height: 20),
+
+                    // 图片上传区域
+                    SizedBox(height: 8),
+                    // 图片上传 - 传递当前单号
+                    MultiImagePicker(
+                      orderNumber: _currentOrderNumber, // 关键：传递当前单号
+                      maxCount: 3,
+                      onImageUploaded: (imagePaths) {
+                        _receiptImageUrls = imagePaths;
+                      },
+                    ),
+                    SizedBox(height: 20),
+
+                    // 客户签字板
+                    SignaturePreview(
+                      onSignatureChanged: (url) async {
+                        print("客户签字: $url");
+                        setState(() {
+                          _signatureImageUrl = url;
+                          _statusMessage = url == null
+                              ? '签名已清除，请重新签名'
+                              : '签名已完成';
+                        });
+                      },
+                    ),
+                    SizedBox(height: 32),
+                  ],
                 ),
-                child: Text('提交'),
               ),
             ),
-          ],
-        ),
+          ),
+
+          // 底部固定提交按钮
+          Padding(
+            padding: EdgeInsets.all(16.0),
+            child: ElevatedButton(
+              onPressed: _submit,
+              style: ElevatedButton.styleFrom(
+                minimumSize: Size(double.infinity, 50),
+              ),
+              child: Text('提交'),
+            ),
+          ),
+        ],
       ),
     );
   }

@@ -144,6 +144,7 @@ class _OutboundScanPageState extends State<OutboundScanPage> {
                       onSuffixPressed: () async {
                         final barcodeResult = await Get.toNamed('/scanner');
                         if (barcodeResult != null) {
+                          _formKey.currentState?.fields['kyInStorageNumber']?.didChange(barcodeResult);
                           await _verifyOrder(barcodeResult);
                         }
                       },

@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:kimiflash/http/api/token_manager.dart';
+import 'package:kimiflash/http/http_client.dart';
 
 class TokenInterceptor extends Interceptor {
   @override
@@ -7,7 +8,7 @@ class TokenInterceptor extends Interceptor {
       RequestOptions options, 
       RequestInterceptorHandler handler) async {
     // 获取保存的token
-    final token = await TokenManager.getToken();
+    final token = await ApiService().getToken();
     
     // 如果存在token，则添加到请求头
     if (token != null) {

@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_form_builder/flutter_form_builder.dart';
 import 'package:get/get.dart';
 import 'package:kimiflash/http/api/auth_api.dart';
 import 'package:kimiflash/pages/delivery/components/delivery_list_item.dart';
 import 'package:kimiflash/pages/widgets/loading_manager.dart';
 import 'package:loading_overlay/loading_overlay.dart';
 import 'package:intl/intl.dart';
+import '../widgets/custom_text_field.dart';
 import 'delivery_list_controller.dart';
 
 class DeliveryListPage extends StatefulWidget {
@@ -23,6 +25,7 @@ class _DeliveryListPageState extends State<DeliveryListPage> with SingleTickerPr
   String _searchText = '';
   String? _deliveryDays =  ''; // 派送方式
   final TextEditingController _searchController = TextEditingController();
+  final _formKey = GlobalKey<FormBuilderState>();
 
   @override
   void initState() {
@@ -109,39 +112,101 @@ class _DeliveryListPageState extends State<DeliveryListPage> with SingleTickerPr
       color: Colors.grey[100],
       child: Row(
         children: [
-          // 搜索框 - 占据大部分宽度
-          Expanded(
-            child: TextField(
-              controller: _searchController,
-              decoration: InputDecoration(
-                hintText: '搜索订单号、收件人...',
-                prefixIcon: Icon(Icons.search),
-                suffixIcon: _searchText.isNotEmpty
-                    ? IconButton(
-                  icon: Icon(Icons.clear),
-                  onPressed: () {
-                    setState(() {
-                      _searchText = '';
-                      _searchController.clear();
-                    });
-                    _fetchOrders(_getStatus(controller.tabController.index));
-                  },
-                )
-                    : null,
-                // 设置红色边框
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
-                  borderSide: BorderSide(color: Colors.red), // 未聚焦时的红色边框
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
-                  borderSide: BorderSide(color: Colors.red.shade700), // 聚焦时的深红色边框
-                ),
-              ),
+          Expanded(child: Container(
+            height: 44,
+            child: CustomTextField(
+              name: 'kyInStorageNumber',
+              labelText: '扫描单号',
+              enabled: true,
+              hintText: '请输入运单号',
+              prefixIcon: Icons.vertical_distribute,
+              suffixIcon: Icons.barcode_reader,
               onChanged: (value) => _searchText = value,
-              onSubmitted: (value) => _fetchOrders(_getStatus(controller.tabController.index)),
+              onTapOutside: (event) {
+                //失去焦点
+                FocusScope.of(context).unfocus();
+                final formState = _formKey.currentState;
+                if (formState != null) {
+                  // 1. 获取当前输入的订单号
+                  final currentValue = formState.fields['kyInStorageNumber']?.value;
+                  if (currentValue != null && currentValue.isNotEmpty) {
+                    // 2. 显示加载状态
+                    HUD.show(context);
+                    // 3. 调用校验接口
+                    _fetchOrders(_getStatus(controller.tabController.index)).whenComplete(() {
+                      // 4. 隐藏加载状态
+                      HUD.hide();
+                    });
+                  } else {
+                    // 订单号为空时的处理
+                    Get.snackbar('提示', '请先输入或扫描订单号');
+                  }
+                }
+              },
+              onSuffixPressed: () async {
+                final barcodeResult = await Get.toNamed('/scanner');
+                if (barcodeResult != null) {
+                  _formKey.currentState?.fields['kyInStorageNumber']?.didChange(barcodeResult);
+                  _fetchOrders(_getStatus(controller.tabController.index));
+                }
+              },
+              onSubmitted: (value) async {
+                if (value != null) {
+                  _fetchOrders(_getStatus(controller.tabController.index));
+                }
+              },
+              validator: (value) {
+                if (value == null || value.isEmpty) {
+                  return '请输入或扫描订单号';
+                }
+                if (!RegExp(r'^(GR|UKG).+').hasMatch(value)) {
+                  return '订单号需以GR或UKG开头';
+                }
+                return null;
+              },
             ),
-          ),
+          )),
+          // 搜索框 - 占据大部分宽度
+          // Expanded(
+          //   child: Container(
+          //     height: 44, // 设置高度为44
+          //     child: TextField(
+          //       controller: _searchController,
+          //       decoration: InputDecoration(
+          //         hintText: '收件人名称/电话/地址/自提点',
+          //         prefixIcon: Icon(Icons.search),
+          //         suffixIcon: _searchText.isNotEmpty
+          //             ? IconButton(
+          //           icon: Icon(Icons.clear),
+          //           onPressed: () {
+          //             setState(() {
+          //               _searchText = '';
+          //               _searchController.clear();
+          //             });
+          //             _fetchOrders(_getStatus(controller.tabController.index));
+          //           },
+          //         )
+          //             : null,
+          //         // 重点：确保边框设置正确
+          //         contentPadding: EdgeInsets.symmetric(vertical: 12, horizontal: 16), // 调整内边距适配高度
+          //         border: OutlineInputBorder(
+          //           borderRadius: BorderRadius.circular(8),
+          //           borderSide: BorderSide(color: Colors.red, width: 1.0), // 未聚焦红色边框
+          //         ),
+          //         enabledBorder: OutlineInputBorder(
+          //           borderRadius: BorderRadius.circular(8),
+          //           borderSide: BorderSide(color: Colors.red, width: 1.0), // 明确设置enabledBorder
+          //         ),
+          //         focusedBorder: OutlineInputBorder(
+          //           borderRadius: BorderRadius.circular(8),
+          //           borderSide: BorderSide(color: Colors.red.shade700, width: 1.5), // 聚焦深红色边框，增加宽度突出效果
+          //         ),
+          //       ),
+          //       onChanged: (value) => _searchText = value,
+          //       onSubmitted: (value) => _fetchOrders(_getStatus(controller.tabController.index)),
+          //     ),
+          //   ),
+          // ),
           // 间隔
           SizedBox(width: 10),
           // 时间选择按钮 - 固定宽度

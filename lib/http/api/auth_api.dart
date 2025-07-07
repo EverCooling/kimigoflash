@@ -1,6 +1,5 @@
 import 'dart:developer' as Get;
 import 'dart:io';
-
 import 'package:get/get_connect/http/src/multipart/form_data.dart' hide FormData;
 import 'package:kimiflash/http/api/api_response.dart';
 import 'package:kimiflash/http/http_client.dart';
@@ -12,7 +11,7 @@ class AuthApi {
   // 使用单例实例
   final ApiService _client = ApiService();
 
-// 修改后的接口调用示例
+  // 修改后的接口调用示例
   Future<ApiResponse> login(String username, String password) async {
     try {
       final response = await _client.post(
@@ -29,7 +28,7 @@ class AuthApi {
   }
 
 
-//签收校验接口
+  //签收校验接口
   Future<ApiResponse> CheckOrderIsDeliver(Map<String,dynamic> queryParameters) async {
     try {
       final response = await _client.post(
@@ -87,7 +86,7 @@ class AuthApi {
   Future<ApiResponse> DeliveryManAbnormalRegister(Map<String,dynamic> queryParameters) async{
     try {
       final response = await _client.post(
-        '/delivery-man/delivery-man-add-order-delivery',
+        'delivery-man/add-delivery-man-abnormal-register',
         data: queryParameters,
       );
 
@@ -149,7 +148,6 @@ class AuthApi {
       FormData formData = FormData.fromMap({
         'file': await MultipartFile.fromFile(file.path),
       });
-
       final response = await _client.post(
         'https://admapi.qa.kimigoshop.com/api/Upload/ImportData',
         data: formData,
@@ -186,8 +184,6 @@ class AuthApi {
     }
   }
 
-
-
 //查询派送列表
   Future<ApiResponse> DeliverManQueryDeliveryList(Map<String,dynamic> queryParameters) async{
     try {
@@ -195,7 +191,6 @@ class AuthApi {
           '/delivery-man/delivery-man-query-delivery-list',
           data: queryParameters
       );
-
       // 使用ApiResponse.parse方法解析响应
       return ApiResponse.parse(response.data);
     } catch (e) {
@@ -232,7 +227,6 @@ class AuthApi {
           '/delivery-man/add-delivery-man-abnormal-register',
           data: queryParameters
       );
-
       // 使用ApiResponse.parse方法解析响应
       return ApiResponse.parse(response.data);
     } catch (e) {
@@ -242,10 +236,5 @@ class AuthApi {
       );
     }
   }
-
-
-
-
-
 }
 

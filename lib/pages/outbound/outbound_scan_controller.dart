@@ -1,5 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:get/get.dart';
+import 'package:kimiflash/http/http_client.dart';
 import '../../http/api/token_manager.dart';
 
 class OutboundScanController extends GetxController {
@@ -18,7 +19,7 @@ class OutboundScanController extends GetxController {
 
   Future<void> _loadUsername() async {
     try {
-      final username = await TokenManager.getUsername(); // 假设这是你的方法
+      final username = await ApiService().getUsername(); // 假设这是你的方法
       courierController.text = username ?? '未知用户';
     } catch (e) {
       courierController.text = '未知用户';

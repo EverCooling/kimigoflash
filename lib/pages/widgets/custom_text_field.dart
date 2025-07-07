@@ -13,7 +13,8 @@ class CustomTextField extends StatelessWidget {
   final FormFieldValidator<String>? validator;
   final bool enabled;
   final bool autofocus;
-  final bool loseFocusOnSubmitted; // 新增：输入结束后是否失去焦点
+  final TapRegionCallback? onTapOutside; // 新增：外部可监听点击外部事件
+  final ValueChanged? onChanged;
 
   const CustomTextField({
     super.key,
@@ -27,8 +28,9 @@ class CustomTextField extends StatelessWidget {
     this.suffixIcon,
     this.validator,
     this.enabled = true,
-    this.autofocus = true,
-    this.loseFocusOnSubmitted = true, // 默认输入结束后失去焦点
+    this.autofocus = false,
+    this.onChanged,
+    this.onTapOutside, // 新增参数
   });
 
   @override
@@ -61,12 +63,30 @@ class CustomTextField extends StatelessWidget {
             ? IconButton(icon: Icon(suffixIcon), onPressed: onSuffixPressed)
             : null,
       ),
+      onEditingComplete: () {
+        FocusScope.of(context).unfocus();
+        print("onEditingComplete");
+      },
+      onTap: () {
+        print("onTap");
+      },
+      onTapOutside: (event) {
+        // 先执行内部逻辑（失去焦点）
+        FocusScope.of(context).unfocus();
+        print("onTapOutside (内部)");
+
+        // 再触发外部回调
+        onTapOutside?.call(event);
+      },
+      onChanged: (value) {
+        FocusScope.of(context).unfocus();
+        onChanged?.call(value);
+
+        print("onChanged");
+      },
       onSubmitted: (value) {
         onSubmitted?.call(value);
-        if (loseFocusOnSubmitted) {
-          // 输入结束后自动失去焦点
-          FocusScope.of(context).unfocus();
-        }
+        FocusScope.of(context).unfocus();
       },
     );
   }

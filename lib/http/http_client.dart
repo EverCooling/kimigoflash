@@ -1,4 +1,6 @@
 import 'package:dio/dio.dart';
+import 'package:flutter/material.dart';
+import 'package:get/get.dart' hide Response;
 import 'package:kimiflash/http/api/token_manager.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
@@ -88,11 +90,10 @@ class ApiService {
   Future<void> clearToken() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove('token');
+    await prefs.remove('username'); // 同时清除用户名
   }
-
-
-  // 获取 Token
-  Future<String> _getUsername() async {
+// 获取 Token
+  Future<String> getUsername() async {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getString('username') ?? '';
   }
@@ -101,12 +102,6 @@ class ApiService {
   Future<void> saveUsername(String token) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('username', token);
-  }
-
-  // 清除 Token
-  Future<void> clearUsername() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.remove('username');
   }
 
   // 处理错误
@@ -127,6 +122,11 @@ class ApiService {
         if (statusCode == 401) {
           // Token 失效，处理登出逻辑
           print('Token 失效，需要重新登录');
+          _logoutAndRedirect();
+        } else if (statusCode == 403) {
+          // 权限不足，强制登出
+          print('权限不足，需要重新登录');
+          _logoutAndRedirect();
         } else if (statusCode == 404) {
           print('请求资源不存在');
         } else if (statusCode == 500) {
@@ -146,6 +146,33 @@ class ApiService {
         print('连接错误');
         break;
     }
+  }
+
+  // 登出并跳转到登录页
+  void _logoutAndRedirect() {
+    // 在UI线程执行
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      // 清除 Token 和用户信息
+      await clearToken();
+
+      // 显示提示信息
+      Get.snackbar(
+        '登录过期',
+        '登录已过期，请重新登录',
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+        snackPosition: SnackPosition.TOP,
+        duration: const Duration(seconds: 2),
+      );
+
+      // 延迟跳转以确保提示信息可见
+      await Future.delayed(const Duration(seconds: 2));
+
+      // 使用GetX导航到登录页
+      // 注意：需要确保您的路由配置中有名为'/login'的路由
+      // 使用offAll清除所有路由，防止返回
+      Get.offAllNamed('/login');
+    });
   }
 
   // 通用 GET 请求

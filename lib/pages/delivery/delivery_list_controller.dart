@@ -31,7 +31,7 @@ class DeliveryListController extends GetxController  with GetTickerProviderState
         Get.toNamed('/complete-delivery-detail', arguments: order);
         break;
       case DeliveryStatus.failed:
-        Get.toNamed('/complete-delivery-detail', arguments: order);
+        Get.toNamed('/pending-delivery-detail', arguments: order);
         // Get.toNamed('/delivery/failed_detail', arguments: order);
         break;
       default:

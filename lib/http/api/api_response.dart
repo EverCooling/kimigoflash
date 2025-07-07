@@ -1,4 +1,6 @@
 import 'dart:convert';
+import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 
 class ApiResponse<T> {
   final T? data;
@@ -12,7 +14,7 @@ class ApiResponse<T> {
     required this.success,
     required this.msg,
     this.code,
-    this.token
+    this.token,
   });
 
   // 新增的通用解析方法
@@ -46,6 +48,11 @@ class ApiResponse<T> {
     final msg = isRawString ? '请求成功' : dataMap['msg'] as String? ?? 'Request failed';
     final token = dataMap['token'] as String?;
 
+    // 检查403状态码并处理
+    if (code == 403) {
+      _handleUnauthorized();
+    }
+
     final data = _parseDataField(isRawString ? dataMap['value'] : (dataMap['data'] ?? dataMap));
 
     return ApiResponse<dynamic>(
@@ -53,11 +60,28 @@ class ApiResponse<T> {
       msg: msg,
       data: data,
       success: success,
-      token: token
+      token: token,
     );
   }
 
-// 数据字段解析方法
+  // 处理未授权状态（403）
+  static void _handleUnauthorized() {
+    // 显示提示信息
+    Get.snackbar('登录过期', '您的会话已过期，请重新登录',
+      backgroundColor: Colors.red,
+      colorText: Colors.white,
+      snackPosition: SnackPosition.TOP,
+    );
+
+    // 延迟跳转以确保提示信息可见
+    Future.delayed(const Duration(seconds: 2), () {
+      // 使用GetX导航到登录页
+      // 注意：需要确保您的路由配置中有名为'/login'的路由
+      Get.offAllNamed('/login');
+    });
+  }
+
+  // 数据字段解析方法
   static dynamic _parseDataField(dynamic data) {
     if (data == null) {
       return null;
@@ -97,10 +121,15 @@ class ApiResponse<T> {
   }
 
   // 从 JSON 解析（可选）
-  factory ApiResponse.fromJson(Map<String, dynamic> json,
-      T Function(dynamic) fromJsonFunc) {
+  factory ApiResponse.fromJson(Map<String, dynamic> json, T Function(dynamic) fromJsonFunc) {
     try {
       final data = json['data'] != null ? fromJsonFunc(json['data']) : null;
+
+      // 检查403状态码
+      if (json['code'] == 403) {
+        _handleUnauthorized();
+      }
+
       return ApiResponse<T>(
         data: data,
         success: json['success'] ?? false,
