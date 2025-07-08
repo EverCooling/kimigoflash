@@ -116,6 +116,9 @@ class _OutboundScanPageState extends State<OutboundScanPage> {
       }
     } catch (e) {
       Get.snackbar('上传异常', e.toString());
+    } finally {
+      //清空输入框单号
+      controller.scanController.clear();
     }
   }
 

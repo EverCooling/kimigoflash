@@ -81,8 +81,8 @@ class CustomTextField extends StatelessWidget {
       },
       onChanged: onChanged,
       onSubmitted: (value) {
-        onSubmitted?.call(value);
         FocusScope.of(context).unfocus();
+        onSubmitted?.call(value);
       },
     );
   }

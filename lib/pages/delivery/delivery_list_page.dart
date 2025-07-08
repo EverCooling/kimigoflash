@@ -126,7 +126,13 @@ class _DeliveryListPageState extends State<DeliveryListPage> with SingleTickerPr
                   prefixIcon: Icons.vertical_distribute,
                   suffixIcon: Icons.barcode_reader,
                   controller: _searchController, // 确保设置controller
-                  onChanged: (value) => _searchText = value,
+                  onChanged: (value) {
+                    _searchText = value;
+                    if (_searchText.isEmpty) {
+                      FocusScope.of(context).unfocus();
+                      _fetchOrders(_getStatus(controller.tabController.index));
+                    }
+                  },
                   onTapOutside: (event) {
                     //失去焦点
                     FocusScope.of(context).unfocus();

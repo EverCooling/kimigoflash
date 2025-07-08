@@ -322,8 +322,8 @@ class _MultiImagePickerState extends State<MultiImagePicker> {
       final result = await AssetPicker.pickAssets(
         context,
         pickerConfig: AssetPickerConfig(
-          maxAssets: widget.maxCount,
-          selectedAssets: _selectedAssets,
+          maxAssets: widget.maxCount -_selectedAssets.length,
+          selectedAssets: [],
           requestType: RequestType.image,
           textDelegate: const EnglishAssetPickerTextDelegate(),
         ),
