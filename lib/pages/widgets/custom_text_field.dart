@@ -6,7 +6,9 @@ class CustomTextField extends StatelessWidget {
   final String labelText;
   final String hintText;
   final IconData? prefixIcon;
+  final FocusNode? focusNode;
   final VoidCallback? onSuffixPressed;
+  final GestureTapCallback? onTap;
   final ValueChanged<String?>? onSubmitted;
   final TextEditingController? controller;
   final IconData? suffixIcon;
@@ -15,14 +17,16 @@ class CustomTextField extends StatelessWidget {
   final bool autofocus;
   final TapRegionCallback? onTapOutside;
   final ValueChanged? onChanged;
+  final FocusNode _focusNode = FocusNode();
 
-  const CustomTextField({
+  CustomTextField({
     super.key,
     required this.name,
     required this.labelText,
     this.controller,
     required this.hintText,
     this.prefixIcon,
+    this.focusNode,
     this.onSuffixPressed,
     this.onSubmitted,
     this.suffixIcon,
@@ -31,16 +35,19 @@ class CustomTextField extends StatelessWidget {
     this.autofocus = false,
     this.onChanged,
     this.onTapOutside,
+    this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
     return FormBuilderTextField(
       name: name,
+      focusNode: _focusNode,
       validator: validator,
       controller: controller,
       enabled: enabled,
-      autofocus: autofocus,
+      autofocus: false,
+      textInputAction: TextInputAction.done,
       decoration: InputDecoration(
         labelText: labelText,
         hintText: hintText,
@@ -60,7 +67,10 @@ class CustomTextField extends StatelessWidget {
         ),
         prefixIcon: prefixIcon != null ? Icon(prefixIcon, color: Colors.red) : null,
         suffixIcon: suffixIcon != null
-            ? IconButton(icon: Icon(suffixIcon), onPressed: onSuffixPressed)
+            ? IconButton(icon: Icon(suffixIcon), onPressed: (){
+          FocusScope.of(context).unfocus();
+          onSuffixPressed?.call();
+        })
             : null,
       ),
       onEditingComplete: () {
@@ -69,6 +79,9 @@ class CustomTextField extends StatelessWidget {
       onTapOutside: (event) {
         FocusScope.of(context).unfocus();
         onTapOutside?.call(event);
+      },
+      onTap: (){
+        onTap?.call();
       },
       onChanged: onChanged,
       onSubmitted: (value) {

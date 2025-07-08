@@ -99,6 +99,8 @@ class _ExceptionReportPageState extends State<ExceptionReportPage> {
                 prefixIcon: Icons.vertical_distribute,
                 suffixIcon: Icons.barcode_reader,
                 onSuffixPressed: () async {
+                  FocusScope.of(context).unfocus();
+
                   final barcodeResult = await Get.toNamed('/scanner');
                   if (barcodeResult != null) {
                     _formKey.currentState?.fields['kyInStorageNumber']?.didChange(barcodeResult);

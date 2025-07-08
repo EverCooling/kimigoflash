@@ -23,7 +23,7 @@ class _DeliveryListPageState extends State<DeliveryListPage> with SingleTickerPr
   List<dynamic> _failedList = [];    // 派件失败
   bool _tabIsSelected = false;
   String _searchText = '';
-  String? _deliveryDays =  ''; // 派送方式
+  String? _deliveryDays =  '全部'; // 派送方式
   final TextEditingController _searchController = TextEditingController();
   final _formKey = GlobalKey<FormBuilderState>();
 
@@ -34,6 +34,20 @@ class _DeliveryListPageState extends State<DeliveryListPage> with SingleTickerPr
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _fetchOrders(_getStatus(controller.tabController.index));
     });
+  }
+
+  @override
+  void activate() {
+    super.activate();
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _fetchOrders(_getStatus(controller.tabController.index));
+    });
+  }
+
+  @override
+  void deactivate() {
+    super.deactivate();
   }
 
   @override
@@ -71,7 +85,7 @@ class _DeliveryListPageState extends State<DeliveryListPage> with SingleTickerPr
     setState(() {
       _searchText = '';
       _searchController.text = '';
-      _deliveryDays = '';
+      _deliveryDays = '全部';
     });
   }
 
@@ -153,8 +167,11 @@ class _DeliveryListPageState extends State<DeliveryListPage> with SingleTickerPr
                       _searchText = barcodeResult;
                       _fetchOrders(_getStatus(controller.tabController.index));
                     }
+                    FocusScope.of(context).unfocus();
                   },
                   onSubmitted: (value) async {
+                    FocusScope.of(context).unfocus();
+
                     if (value != null) {
                       _searchText = value;
                       _fetchOrders(_getStatus(controller.tabController.index));
@@ -204,7 +221,7 @@ class _DeliveryListPageState extends State<DeliveryListPage> with SingleTickerPr
   int _getDeliveryDays(String? deliveryDays) {
     switch (_deliveryDays) {
       case '全部':
-        return 1;
+        return 6;
       case '当天':
         return 1;
       case '三天内':
@@ -214,7 +231,7 @@ class _DeliveryListPageState extends State<DeliveryListPage> with SingleTickerPr
       case '七天内':
         return 6;
       default:
-        return 1;
+        return 6;
     }
   }
 
