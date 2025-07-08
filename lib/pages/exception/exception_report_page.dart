@@ -11,9 +11,7 @@ import 'package:kimiflash/pages/exception/exception_report_controller.dart';
 import '../widgets/custom_text_field.dart';
 
 class ExceptionReportPage extends StatefulWidget {
-  final Map<String, dynamic> deliveryItem;
-
-  const ExceptionReportPage({super.key, required this.deliveryItem});
+  const ExceptionReportPage({super.key});
 
   @override
   State<ExceptionReportPage> createState() => _ExceptionReportPageState();
@@ -24,8 +22,31 @@ class _ExceptionReportPageState extends State<ExceptionReportPage> {
   List<String>? _receiptImageUrls;
   final AuthApi _authApi = AuthApi();
   String? deliveryFailType = '请选择异常原因'; // 默认值设置为提示文字
+  Map<String,dynamic>? deliveryItem;
 
   final _formKey = GlobalKey<FormBuilderState>();
+
+  @override
+  void initState() {
+    super.initState();
+    deliveryItem = Get.arguments as Map<String, dynamic>?;
+
+    // 检查deliveryItem是否有值并填充单号
+    if (deliveryItem != null && deliveryItem!.containsKey('kyInStorageNumber')) {
+      final orderNumber = deliveryItem!['kyInStorageNumber'].toString();
+
+      // 使用WidgetsBinding确保在Widget渲染完成后再设置值
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        // 设置控制器的值
+        controller.scanController.text = orderNumber;
+
+        // 更新表单字段的值
+        if (_formKey.currentState != null) {
+          _formKey.currentState?.fields['kyInStorageNumber']?.didChange(orderNumber);
+        }
+      });
+    }
+  }
 
   int _getDeliveryFailType(String deliveryFailType) {
     switch (deliveryFailType) {
@@ -67,7 +88,7 @@ class _ExceptionReportPageState extends State<ExceptionReportPage> {
 
       if (response.code == 200) {
         Get.snackbar('成功', '异常登记提交成功');
-        Navigator.pop(context);
+        Get.back(result: true); // 只在成功时返回
       } else {
         Get.snackbar('失败', response.msg ?? '未知错误');
       }

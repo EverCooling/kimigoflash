@@ -42,7 +42,7 @@ class AppPages {
     ),
     GetPage(
       name: '/exception-report',
-      page: () => ExceptionReportPage(deliveryItem: {},),
+      page: () => ExceptionReportPage(),
       binding: ExceptionReportBinding(),
     ),
     GetPage(
@@ -52,7 +52,7 @@ class AppPages {
     ),
     GetPage(
       name: '/pending-delivery-detail',
-      page: () => PendingDeliveryDetail(deliveryItem: Get.arguments),
+      page: () => PendingDeliveryDetail(),
       binding: PendingDeliveryDetailBinding(),
     ),
     GetPage(

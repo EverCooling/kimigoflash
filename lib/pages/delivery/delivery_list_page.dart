@@ -34,20 +34,7 @@ class _DeliveryListPageState extends State<DeliveryListPage> with SingleTickerPr
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _fetchOrders(_getStatus(controller.tabController.index));
     });
-  }
 
-  @override
-  void activate() {
-    super.activate();
-
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _fetchOrders(_getStatus(controller.tabController.index));
-    });
-  }
-
-  @override
-  void deactivate() {
-    super.deactivate();
   }
 
   @override
@@ -324,6 +311,24 @@ class _DeliveryListPageState extends State<DeliveryListPage> with SingleTickerPr
           status: type,
           item: order,
           onTap: () => controller.navigateToDetail(order, type),
+          onSignTap: () async {
+            final result = await  Get.toNamed(
+              '/pending-delivery-detail',
+              arguments: order, // 直接传递item作为deliveryItem
+            );
+            if(result == true){
+              _fetchOrders(_getStatus(controller.tabController.index));
+            }
+          },
+          onFailTap: () async {
+            final result = await Get.toNamed(
+              '/exception-report',
+              arguments: order, // 直接传递item作为deliveryItem
+            );
+            if(result == true){
+              _fetchOrders(_getStatus(controller.tabController.index));
+            }
+          },
         );
       },
     );

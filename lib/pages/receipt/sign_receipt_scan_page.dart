@@ -141,7 +141,7 @@ class _SignReceiptScanPageState extends State<SignReceiptScanPage> {
         if (response.code == 200) {
           Get.snackbar('成功', '签收成功');
           // 签收成功后可以返回上一页
-          Navigator.of(context).pop();
+          Get.back(result: true);
         } else {
           Get.snackbar('失败', response.msg ?? '验证失败');
         }

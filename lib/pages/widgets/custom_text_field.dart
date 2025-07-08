@@ -6,7 +6,6 @@ class CustomTextField extends StatelessWidget {
   final String labelText;
   final String hintText;
   final IconData? prefixIcon;
-  final FocusNode? focusNode;
   final VoidCallback? onSuffixPressed;
   final GestureTapCallback? onTap;
   final ValueChanged<String?>? onSubmitted;
@@ -17,7 +16,6 @@ class CustomTextField extends StatelessWidget {
   final bool autofocus;
   final TapRegionCallback? onTapOutside;
   final ValueChanged? onChanged;
-  final FocusNode _focusNode = FocusNode();
 
   CustomTextField({
     super.key,
@@ -26,7 +24,6 @@ class CustomTextField extends StatelessWidget {
     this.controller,
     required this.hintText,
     this.prefixIcon,
-    this.focusNode,
     this.onSuffixPressed,
     this.onSubmitted,
     this.suffixIcon,
@@ -42,7 +39,6 @@ class CustomTextField extends StatelessWidget {
   Widget build(BuildContext context) {
     return FormBuilderTextField(
       name: name,
-      focusNode: _focusNode,
       validator: validator,
       controller: controller,
       enabled: enabled,

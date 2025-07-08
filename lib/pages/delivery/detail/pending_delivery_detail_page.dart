@@ -13,9 +13,8 @@ import '../../widgets/sign_method_bottom_sheet.dart';
 import '../../widgets/signature_preview.dart';
 
 class PendingDeliveryDetail extends StatefulWidget {
-  final Map<String, dynamic> deliveryItem;
 
-  const PendingDeliveryDetail({Key? key, required this.deliveryItem})
+  const PendingDeliveryDetail({Key? key})
     : super(key: key);
 
   @override
@@ -30,13 +29,20 @@ class _PendingDeliveryDetailPageState extends State<PendingDeliveryDetail> {
   List<String>? _receiptImageUrls;
   String? _signatureImageUrl;
   final _formKey = GlobalKey<FormBuilderState>();
+  Map<String,dynamic>? deliveryItem;
 
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _fetchOrders(widget.deliveryItem['id']);
-    });
+    deliveryItem = Get.arguments as Map<String, dynamic>?;
+
+    // 检查deliveryItem是否有值并填充单号
+    if (deliveryItem != null && deliveryItem!.containsKey('kyInStorageNumber')) {
+      // 使用WidgetsBinding确保在Widget渲染完成后再设置值
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _fetchOrders(deliveryItem!['id']);
+      });
+    }
   }
 
   String getSignForTypeName(int signForType) {
@@ -67,6 +73,8 @@ class _PendingDeliveryDetailPageState extends State<PendingDeliveryDetail> {
   }
 
   Future<void> _submit() async {
+    Get.back(result: true);
+
     print('提交按钮点击'); // 调试输出
     HUD.show(context);
 
@@ -87,8 +95,8 @@ class _PendingDeliveryDetailPageState extends State<PendingDeliveryDetail> {
           'customerCode': '10010'
         });
         if (response.code == 200) {
-
           Get.snackbar('成功', '签收成功');
+          Get.back(result: true);
         } else {
           Get.snackbar('失败', response.msg ?? '验证失败');
         }
