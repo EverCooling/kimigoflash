@@ -2,9 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:kimiflash/pages/delivery/components/delivery_list_item.dart';
 
-import '../../http/api/auth_api.dart';
-import '../widgets/loading_manager.dart';
-
 class DeliveryListController extends GetxController  with GetTickerProviderStateMixin{
   late TabController tabController;
 
@@ -31,7 +28,7 @@ class DeliveryListController extends GetxController  with GetTickerProviderState
         Get.toNamed('/complete-delivery-detail', arguments: order);
         break;
       case DeliveryStatus.failed:
-        Get.toNamed('/pending-delivery-detail', arguments: order);
+        Get.toNamed('/failed-delivery-detail', arguments: order);
         // Get.toNamed('/delivery/failed_detail', arguments: order);
         break;
       default:

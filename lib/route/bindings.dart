@@ -1,8 +1,8 @@
 // lib/route/bindings.dart
 import 'package:get/get.dart';
-import 'package:kimiflash/pages/completed_delivery/detail/complete_delivery_detail_page.dart';
 import '../pages/completed_delivery/detail/complete_delivery_detail_controller.dart';
 import '../pages/delivery/delivery_list_controller.dart';
+import '../pages/delivery/detail/failed_delivery_detail_controller.dart';
 import '../pages/delivery/detail/pending_delivery_detail_controller.dart';
 import '../pages/login/login_controller.dart';
 import '../pages/outbound/outbound_scan_controller.dart';
@@ -10,7 +10,6 @@ import '../pages/receipt/sign_receipt_scan_controller.dart';
 import '../pages/exception/exception_report_controller.dart';
 import '../pages/home/home_controller.dart';
 import '../pages/completed_delivery/completed_delivery_list_controller.dart';
-import '../pages/completed_delivery/completed_delivery_list_page.dart';
 import '../pages/screens/mobile_scanner_advanced_controller.dart';
 //首页
 class HomeBinding extends Bindings {
@@ -89,6 +88,14 @@ class ExceptionReportBinding extends Bindings {
   @override
   void dependencies() {
     Get.lazyPut(() => ExceptionReportController());
+  }
+}
+
+//失败登记详情页
+class FailedDeliveryDetailBinding extends Bindings {
+  @override
+  void dependencies() {
+    Get.lazyPut(() => FailedDeliveryDetailController());
   }
 }
 

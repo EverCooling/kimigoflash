@@ -99,7 +99,7 @@ class DeliveryListItem extends StatelessWidget {
               ),
             ),
             // 底部操作按钮（仅在待派件状态显示）
-            if (status == DeliveryStatus.pending)
+            if (status == DeliveryStatus.pending || status == DeliveryStatus.failed)
               _buildActionButtons(context),
           ],
         ),

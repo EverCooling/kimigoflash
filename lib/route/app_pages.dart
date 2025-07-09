@@ -4,6 +4,7 @@ import 'package:kimiflash/pages/completed_delivery/completed_delivery_list_contr
 import 'package:kimiflash/pages/completed_delivery/completed_delivery_list_page.dart';
 import 'package:kimiflash/pages/completed_delivery/detail/complete_delivery_detail_page.dart';
 import '../pages/delivery/delivery_list_page.dart';
+import '../pages/delivery/detail/failed_delivery_detail_page.dart';
 import '../pages/delivery/detail/pending_delivery_detail_page.dart';
 import '../pages/screens/mobile_scanner_advanced.dart';
 import 'bindings.dart'; // 引入 Bindings 文件
@@ -54,6 +55,11 @@ class AppPages {
       name: '/pending-delivery-detail',
       page: () => PendingDeliveryDetail(),
       binding: PendingDeliveryDetailBinding(),
+    ),
+    GetPage(
+      name: '/failed-delivery-detail',
+      page: () => FailedDeliveryDetail(),
+      binding: FailedDeliveryDetailBinding(),
     ),
     GetPage(
       name: '/complete-delivery-list',

@@ -4,8 +4,6 @@ import 'package:get/get.dart';
 import 'package:kimiflash/http/api/auth_api.dart';
 import 'package:kimiflash/pages/delivery/components/delivery_list_item.dart';
 import 'package:kimiflash/pages/widgets/loading_manager.dart';
-import 'package:loading_overlay/loading_overlay.dart';
-import 'package:intl/intl.dart';
 import '../widgets/custom_text_field.dart';
 import 'delivery_list_controller.dart';
 
