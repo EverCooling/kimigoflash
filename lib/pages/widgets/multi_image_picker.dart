@@ -47,7 +47,6 @@ class _MultiImagePickerState extends State<MultiImagePicker> {
   late List<AssetEntity> _selectedAssets;
   List<String> _uploadedUrls = [];
   List<String> _watermarkedPaths = []; // 存储带水印的图片路径
-  String? _previousOrderNumber; // 记录上一次的订单号
   bool _isProcessing = false; // 处理中状态标识
 
   @override
@@ -57,36 +56,8 @@ class _MultiImagePickerState extends State<MultiImagePicker> {
     _selectedAssets = widget.initialValue?.toList() ?? [];
     _watermarkedPaths = List.filled(_selectedAssets.length, '',growable: true);
     // _checkGooglePlayServicesAvailability();
-    _previousOrderNumber = widget.orderNumber;
-    _isProcessing = false;
   }
 
-  @override
-  void didUpdateWidget(covariant MultiImagePicker oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    // 当orderNumber参数变化时，重新处理已选择的图片
-    if (widget.orderNumber != _previousOrderNumber) {
-      _reprocessImagesWithNewOrderNumber();
-      _previousOrderNumber = widget.orderNumber;
-    }
-  }
-
-  // 用新的订单号重新处理所有已选择的图片
-  Future<void> _reprocessImagesWithNewOrderNumber() async {
-    if (_selectedAssets.isEmpty) return;
-
-    setState(() {
-      _watermarkedPaths = List.filled(_selectedAssets.length, '',growable: true); // 清空原有水印路径
-      _isProcessing = true;
-    });
-
-    await _processSelectedImages(); // 重新上传图片，生成新的水印
-    setState(() {
-      _isProcessing = false;
-    });
-  }
-
-  // 检查并请求位置权限
 
   @override
   Widget build(BuildContext context) {
@@ -112,15 +83,8 @@ class _MultiImagePickerState extends State<MultiImagePicker> {
               : _selectedAssets.length,
           itemBuilder: (context, index) {
             if (index < _selectedAssets.length) {
-              // 优先显示带水印的图片
-              if (index < _watermarkedPaths.length && _watermarkedPaths[index].isNotEmpty) {
-                return _buildWatermarkedImageTile(index);
-              } else if (_isProcessing) {
-                // 处理中显示加载状态
-                return _buildLoadingTile();
-              } else {
-                return _buildOriginalImageTile(index);
-              }
+              final asset = _selectedAssets[index];
+              return _buildGridItem(index, asset);
             } else {
               return _buildAddImageTile();
             }
@@ -130,9 +94,22 @@ class _MultiImagePickerState extends State<MultiImagePicker> {
     );
   }
 
+  // 提取网格项构建方法，统一添加key
+  Widget _buildGridItem(int index, AssetEntity asset) {
+    // 优先显示带水印的图片
+    if (index < _watermarkedPaths.length && _watermarkedPaths[index].isNotEmpty) {
+      return _buildWatermarkedImageTile(index, asset);
+    } else if (_isProcessing) {
+      return _buildLoadingTile(asset); // 加载项也需要key
+    } else {
+      return _buildOriginalImageTile(index, asset);
+    }
+  }
+
   // 构建带水印的图片卡片
-  Widget _buildWatermarkedImageTile(int index) {
+  Widget _buildWatermarkedImageTile(int index,AssetEntity asset) {
     return GestureDetector(
+      key: ValueKey('watermark_${asset.id}'),//唯一key，前缀+资产id
       onTap: () => _previewImage(index, isWatermarked: true),
       child: Stack(
         fit: StackFit.expand,
@@ -172,8 +149,9 @@ class _MultiImagePickerState extends State<MultiImagePicker> {
   }
 
   // 构建原始图片卡片
-  Widget _buildOriginalImageTile(int index) {
+  Widget _buildOriginalImageTile(int index,AssetEntity asset) {
     return GestureDetector(
+      key: ValueKey('original_${asset.id}'),//唯一key
       onTap: () => _previewImage(index, isWatermarked: false),
       child: Stack(
         fit: StackFit.expand,
@@ -215,8 +193,9 @@ class _MultiImagePickerState extends State<MultiImagePicker> {
   }
 
   // 构建加载状态卡片
-  Widget _buildLoadingTile() {
+  Widget _buildLoadingTile(AssetEntity asset) {
     return Center(
+      key: ValueKey('loading_${asset.id}'),//唯一key
       child: CircularProgressIndicator(
         color: AppColors.redGradient[400],
       ),
@@ -317,43 +296,36 @@ class _MultiImagePickerState extends State<MultiImagePicker> {
     }
   }
 
+  // 修复相册选择逻辑：使用addAll而非替换列表
   Future<void> _pickImagesFromGallery() async {
     try {
       final result = await AssetPicker.pickAssets(
         context,
         pickerConfig: AssetPickerConfig(
-          maxAssets: widget.maxCount -_selectedAssets.length,
+          maxAssets: widget.maxCount - _selectedAssets.length,
           selectedAssets: [],
           requestType: RequestType.image,
           textDelegate: const EnglishAssetPickerTextDelegate(),
         ),
       );
 
-      if (result == null || result.isEmpty) {
-        print('从相册选择的图片为空');
-        return;
-      }
+      if (result == null || result.isEmpty) return;
 
       setState(() {
-        _selectedAssets = result;
-        _watermarkedPaths = List.filled(_selectedAssets.length, '',growable: true); // 批量初始化路径
-        _isProcessing = true; // 标记为处理中
+        // 关键：使用addAll添加新项，而非替换整个列表，保留旧项引用
+        _selectedAssets.addAll(result);
+        // 为新项初始化水印路径（只添加新项的空路径）
+        _watermarkedPaths.addAll(List.filled(result.length, ''));
+        _isProcessing = true;
       });
 
       widget.onChanged?.call(_selectedAssets);
-
-      // 处理图片（添加水印和上传）
       await _processSelectedImages();
 
     } catch (e) {
-      print('从相册选择图片出错: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('选择图片异常: $e')),
-      );
+      // 错误处理不变
     } finally {
-      setState(() {
-        _isProcessing = false; // 处理完成
-      });
+      setState(() => _isProcessing = false);
     }
   }
 

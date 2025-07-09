@@ -188,7 +188,6 @@ class _SignReceiptScanPageState extends State<SignReceiptScanPage> {
                         if (formState != null) {
                           // 1. 获取当前输入的订单号
                           final currentValue = formState.fields['kyInStorageNumber']?.value;
-
                           if (currentValue != null && currentValue.isNotEmpty) {
                             _updateOrderNumber(currentValue);
                             // 2. 显示加载状态
@@ -209,11 +208,13 @@ class _SignReceiptScanPageState extends State<SignReceiptScanPage> {
                         final barcodeResult = await Get.toNamed('/scanner');
                         if (barcodeResult != null) {
                           _formKey.currentState?.fields['kyInStorageNumber']?.didChange(barcodeResult);
+                          _updateOrderNumber(barcodeResult);
                           await _verifyOrder(barcodeResult);
                         }
                       },
                       onSubmitted: (value) async {
                         if (value != null) {
+                          _updateOrderNumber(value);
                           await _verifyOrder(value);
                         }
                       },

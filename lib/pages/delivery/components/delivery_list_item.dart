@@ -203,7 +203,7 @@ class DeliveryListItem extends StatelessWidget {
 
   // 其他功能方法（保持不变）
   void _callPhoneNumber(BuildContext context) {
-    final phoneNumber = item['recipientPhone'] ?? '';
+    final phoneNumber = item['recipietnMobile'] ?? '';
     if (phoneNumber.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('电话号码为空')));
       return;

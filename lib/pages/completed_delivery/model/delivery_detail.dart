@@ -4,6 +4,7 @@ import 'dart:convert';
 class DeliveryDetail {
   final int id;
   final String orderNumber;
+  final String lastFailureReason;
   final String trackingNumber;
   final String recipientName;
   final String recipietnMobile;
@@ -18,6 +19,7 @@ class DeliveryDetail {
   DeliveryDetail({
     required this.id,
     required this.orderNumber,
+    required this.lastFailureReason,
     required this.trackingNumber,
     required this.recipientName,
     required this.recipietnMobile,
@@ -34,6 +36,7 @@ class DeliveryDetail {
     return DeliveryDetail(
       id: json['id'] ?? 0,
       orderNumber: json['orderNumber'] ?? '',
+      lastFailureReason: json['lastFailureReason'] ?? '',
       trackingNumber: json['trackingNumber'] ?? '',
       recipientName: json['recipientName'] ?? '',
       recipietnMobile: json['recipietnMobile'] ?? '',
