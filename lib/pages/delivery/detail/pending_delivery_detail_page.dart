@@ -201,6 +201,7 @@ class _PendingDeliveryDetailPageState extends State<PendingDeliveryDetail> {
                       ),
                     ]),
 
+                    const SizedBox(height: 16),
 
                     // 3. 总件数
                     _buildInfoCard(
@@ -211,26 +212,28 @@ class _PendingDeliveryDetailPageState extends State<PendingDeliveryDetail> {
                     const SizedBox(height: 16),
 
                     // 6. 签收方式
-                    CustomDropdownField(
-                      name: 'signMethod',
-                      labelText: '签收方式',
-                      items: controller.methods,
-                      initialValue: controller.selectedMethod,
-                      onTap: (context) async {
-                        final result = await SignMethodBottomSheet.show(
-                          context,
-                          methods: controller.methods,
-                          initialValue: controller.selectedMethod,
-                        );
-                        if (result != null) {
-                          print('叭叭叭叭叭 ===== ${result['value']}');
-                          return result['value'];
-                        }
-                        return null;
-                      }, validator: (value) {
-                        return value == null ? '请选择签收方式' : null;
-                      },
-                    ),
+                   Card(
+                     elevation: 4,
+                     child:  CustomDropdownField(
+                       name: 'signMethod',
+                       labelText: '签收方式',
+                       items: controller.methods,
+                       initialValue: controller.selectedMethod,
+                       onTap: (context) async {
+                         final result = await SignMethodBottomSheet.show(
+                           context,
+                           methods: controller.methods,
+                           initialValue: controller.selectedMethod,
+                         );
+                         if (result != null) {
+                           print('叭叭叭叭叭 ===== ${result['value']}');
+                           return result['value'];
+                         }
+                         return null;
+                       }, validator: (value) {
+                     return value == null ? '请选择签收方式' : null;
+                   })),
+
                     const SizedBox(height: 16),
 
                     // 7. 签收图片
@@ -305,14 +308,14 @@ class _PendingDeliveryDetailPageState extends State<PendingDeliveryDetail> {
     IconData? icon,
   }) {
     return Card(
-      margin: EdgeInsets.zero,
+      margin: EdgeInsets.all(4),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-      elevation: 0,
+      elevation: 4,
       color: Colors.transparent,
       // 透明背景
       child: Container(
         decoration: BoxDecoration(
-          border: Border.all(color: Colors.red, width: 1.0),
+          border: Border.all(color: Colors.white12, width: 1.0),
           borderRadius: BorderRadius.circular(8),
           color: Colors.white, // 白色背景
         ),

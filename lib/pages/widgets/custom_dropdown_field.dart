@@ -45,15 +45,15 @@ class CustomDropdownField extends StatelessWidget {
               fillColor: Colors.white,
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(8.0),
-                borderSide: BorderSide(color: Colors.red, width: 1.0),
+                borderSide: BorderSide(color: Colors.white12, width: 1.0),
               ),
               enabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(8.0),
-                borderSide: BorderSide(color: Colors.red, width: 1.0),
+                borderSide: BorderSide(color: Colors.white12, width: 1.0),
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(8.0),
-                borderSide: BorderSide(color: Colors.red, width: 2.0),
+                borderSide: BorderSide(color: Colors.white12, width: 2.0),
               ),
             ),
             child: Row(

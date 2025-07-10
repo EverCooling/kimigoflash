@@ -17,7 +17,7 @@ class CustomTextField extends StatelessWidget {
   final TapRegionCallback? onTapOutside;
   final ValueChanged? onChanged;
 
-  CustomTextField({
+  const CustomTextField({
     super.key,
     required this.name,
     required this.labelText,
@@ -37,53 +37,60 @@ class CustomTextField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return FormBuilderTextField(
-      name: name,
-      validator: validator,
-      controller: controller,
-      enabled: enabled,
-      autofocus: false,
-      textInputAction: TextInputAction.done,
-      decoration: InputDecoration(
-        labelText: labelText,
-        hintText: hintText,
-        filled: true,
-        fillColor: Colors.white,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8.0),
-          borderSide: BorderSide(color: Colors.red, width: 1.0),
+    return Card(
+      elevation: 4,
+      child: FormBuilderTextField(
+        name: name,
+        validator: validator,
+        controller: controller,
+        enabled: enabled,
+        autofocus: false,
+        textInputAction: TextInputAction.done,
+        decoration: InputDecoration(
+          labelText: labelText,
+          hintText: hintText,
+          filled: true,
+          fillColor: Colors.white,
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(8.0),
+            borderSide: BorderSide(color: Colors.white10, width: 1.0),
+          ),
+          disabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(8.0),
+            borderSide: BorderSide(color: Colors.white10, width: 1.0),
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(8.0),
+            borderSide: BorderSide(color: Colors.white10, width: 1.0),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(8.0),
+            borderSide: BorderSide(color: Colors.white10, width: 2.0),
+          ),
+          prefixIcon: prefixIcon != null ? Icon(prefixIcon, color: Colors.red) : null,
+          suffixIcon: suffixIcon != null
+              ? IconButton(icon: Icon(suffixIcon), onPressed: (){
+            FocusScope.of(context).unfocus();
+            onSuffixPressed?.call();
+          })
+              : null,
         ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8.0),
-          borderSide: BorderSide(color: Colors.red, width: 1.0),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8.0),
-          borderSide: BorderSide(color: Colors.red, width: 2.0),
-        ),
-        prefixIcon: prefixIcon != null ? Icon(prefixIcon, color: Colors.red) : null,
-        suffixIcon: suffixIcon != null
-            ? IconButton(icon: Icon(suffixIcon), onPressed: (){
+        onEditingComplete: () {
           FocusScope.of(context).unfocus();
-          onSuffixPressed?.call();
-        })
-            : null,
+        },
+        onTapOutside: (event) {
+          FocusScope.of(context).unfocus();
+          onTapOutside?.call(event);
+        },
+        onTap: (){
+          onTap?.call();
+        },
+        onChanged: onChanged,
+        onSubmitted: (value) {
+          FocusScope.of(context).unfocus();
+          onSubmitted?.call(value);
+        },
       ),
-      onEditingComplete: () {
-        FocusScope.of(context).unfocus();
-      },
-      onTapOutside: (event) {
-        FocusScope.of(context).unfocus();
-        onTapOutside?.call(event);
-      },
-      onTap: (){
-        onTap?.call();
-      },
-      onChanged: onChanged,
-      onSubmitted: (value) {
-        FocusScope.of(context).unfocus();
-        onSubmitted?.call(value);
-      },
     );
   }
 }

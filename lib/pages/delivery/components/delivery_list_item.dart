@@ -33,7 +33,7 @@ class DeliveryListItem extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Card(
-        elevation: 2,
+        elevation: 4,
         margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,

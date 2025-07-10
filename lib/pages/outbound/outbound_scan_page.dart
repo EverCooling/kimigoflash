@@ -76,8 +76,6 @@ class _OutboundScanPageState extends State<OutboundScanPage> {
         await _deliveryManBatchOutWarehouse(orderNumber);
         // 使用响应式方法添加数据
         controller.scannedList.add(orderNumber);
-        controller.scanController.clear();
-        _formKey.currentState!.reset();
       } else {
         await _deliveryManBatchOutWarehouse(orderNumber);
         //清除单号
@@ -112,6 +110,7 @@ class _OutboundScanPageState extends State<OutboundScanPage> {
       if (uploadResponse.code == 200) {
         Get.snackbar('上传成功', '单号已上传');
         controller.uploadedList.add(orderNumber);
+        controller.scanController.clear();
       } else {
         Get.snackbar('上传失败', uploadResponse.msg ?? '上传出错');
       }
@@ -120,6 +119,7 @@ class _OutboundScanPageState extends State<OutboundScanPage> {
     } finally {
       //清空输入框单号
       controller.scanController.clear();
+      _formKey.currentState?.fields['kyInStorageNumber']?.didChange('');
     }
   }
 

@@ -176,7 +176,7 @@ class _CompleteDeliveryDetailPageState extends State<CompleteDeliveryDetailPage>
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, size: 16, color: Colors.red),
+          Icon(icon, size: 16, color: Colors.white),
           const SizedBox(width: 8),
           Expanded(
             child: Column(
@@ -315,12 +315,12 @@ class _CompleteDeliveryDetailPageState extends State<CompleteDeliveryDetailPage>
     return Card(
       margin: EdgeInsets.zero,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-      elevation: 0,
+      elevation: 4,
       color: Colors.transparent,
       // 透明背景
       child: Container(
         decoration: BoxDecoration(
-          border: Border.all(color: Colors.red, width: 1.0),
+          border: Border.all(color: Colors.white12, width: 1.0),
           borderRadius: BorderRadius.circular(8),
           color: Colors.white, // 白色背景
         ),

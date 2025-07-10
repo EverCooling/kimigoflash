@@ -136,26 +136,6 @@ class AuthApi {
     }
   }
 
-  //上传图片
-  Future<ApiResponse> uploadImage(String path) async {
-    try {
-      // 直接使用FormData和MultipartFile的构造函数
-      final formData = FormData.fromMap({
-        'file': await MultipartFile.fromFile(path, filename: path.split('/').last),
-      });
-
-      final response = await _client.post(
-          '/api/Upload/ImportData',
-          data: {
-            'filePath': path,
-            'name':"file"
-          },
-      );
-      return ApiResponse.parse(response.data);
-    } catch (e) {
-      throw Exception('图片上传失败: $e');
-    }
-  }
 
   // 上传单个文件
   Future<ApiResponse> uploadFile(File file,

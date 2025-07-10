@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_form_builder/flutter_form_builder.dart';
 import 'package:get/get.dart';
 import 'package:kimiflash/pages/completed_delivery/model/delivery_detail.dart';
-import 'package:kimiflash/pages/delivery/detail/pending_delivery_detail_controller.dart';
 import 'dart:convert'; // 确保导入了jsonEncode方法
 import '../../../http/api/auth_api.dart';
 import '../../widgets/custom_dropdown_field.dart';
@@ -151,7 +150,7 @@ class _FailedDeliveryDetailPageState extends State<FailedDeliveryDetail> {
 
   @override
   Widget build(BuildContext context) {
-    final controller = Get.find<PendingDeliveryDetailController>();
+    final controller = Get.find<FailedDeliveryDetailController>();
     return Scaffold(
       appBar: AppBar(title: const Text('待派详情')),
       body: Column(
@@ -195,14 +194,6 @@ class _FailedDeliveryDetailPageState extends State<FailedDeliveryDetail> {
                     ),
                     const SizedBox(height: 16),
 
-                    // 新增：备注信息
-                    _buildInfoCard(
-                      title: '备注信息',
-                      content: _getLimitedText(deliveryDetails?.lastFailureReason ?? ''),
-                      icon: Icons.notes,
-                    ),
-                    const SizedBox(height: 16),
-
                     _buildInfoCard(title: '品类', children: [
                       _buildCategoryRow(
                         '品类1',
@@ -220,26 +211,38 @@ class _FailedDeliveryDetailPageState extends State<FailedDeliveryDetail> {
                     ),
                     const SizedBox(height: 16),
 
+                    // 新增：备注信息
+                    _buildInfoCard(
+                      title: '异常描述',
+                      content: _getLimitedText(deliveryDetails?.lastFailureReason ?? ''),
+                      icon: Icons.notes,
+                    ),
+                    const SizedBox(height: 16),
+
                     // 6. 签收方式
-                    CustomDropdownField(
-                      name: 'signMethod',
-                      labelText: '签收方式',
-                      items: controller.methods,
-                      initialValue: controller.selectedMethod,
-                      onTap: (context) async {
-                        final result = await SignMethodBottomSheet.show(
-                          context,
-                          methods: controller.methods,
-                          initialValue: controller.selectedMethod,
-                        );
-                        if (result != null) {
-                          print('叭叭叭叭叭 ===== ${result['value']}');
-                          return result['value'];
-                        }
-                        return null;
-                      }, validator: (value) {
-                        return value == null ? '请选择签收方式' : null;
-                      },
+                    Card(
+                      elevation: 4,
+                      child: CustomDropdownField(
+                        name: 'signMethod',
+                        labelText: '签收方式',
+                        items: controller.methods,
+                        initialValue: controller.selectedMethod,
+                        onTap: (context) async {
+                          final result = await SignMethodBottomSheet.show(
+                            context,
+                            methods: controller.methods,
+                            initialValue: controller.selectedMethod,
+                          );
+                          if (result != null) {
+                            print('叭叭叭叭叭 ===== ${result['value']}');
+                            return result['value'];
+                          }
+                          return null;
+                        },
+                        validator: (value) {
+                          return value == null ? '请选择签收方式' : null;
+                        },
+                      )
                     ),
                     const SizedBox(height: 16),
 
@@ -322,14 +325,14 @@ class _FailedDeliveryDetailPageState extends State<FailedDeliveryDetail> {
     IconData? icon,
   }) {
     return Card(
-      margin: EdgeInsets.zero,
+      margin: EdgeInsets.all(4),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-      elevation: 0,
+      elevation: 4,
       color: Colors.transparent,
       // 透明背景
       child: Container(
         decoration: BoxDecoration(
-          border: Border.all(color: Colors.red, width: 1.0),
+          border: Border.all(color: Colors.white12, width: 1.0),
           borderRadius: BorderRadius.circular(8),
           color: Colors.white, // 白色背景
         ),

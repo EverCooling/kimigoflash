@@ -137,6 +137,7 @@ class _ExceptionReportPageState extends State<ExceptionReportPage> {
                 name: 'kyInStorageNumber',
                 enabled: true,
                 labelText: '扫描单号',
+                autofocus: false,
                 hintText: '请输入运单号',
                 prefixIcon: Icons.vertical_distribute,
                 suffixIcon: Icons.barcode_reader,

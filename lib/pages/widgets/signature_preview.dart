@@ -78,22 +78,25 @@ class _SignaturePreviewState extends State<SignaturePreview> {
         SizedBox(height: 8),
         InkWell(
           onTap: _signatureUrl != null ? _viewLargeImage : () => _showSignatureDialog(context),
-          child: Container(
-            width: double.infinity,
-            height: 150,
-            decoration: BoxDecoration(
-              border: Border.all(color: Colors.red),
-              borderRadius: BorderRadius.circular(8),
-              color: Colors.white,
+          child: Card(
+            elevation: 4,
+            child: Container(
+              width: double.infinity,
+              height: 150,
+              decoration: BoxDecoration(
+                border: Border.all(color: Colors.white12),
+                borderRadius: BorderRadius.circular(8),
+                color: Colors.white,
+              ),
+              child: _signatureUrl == null
+                  ? Center(child: Text('点击此处签名', style: TextStyle(color: Colors.grey)))
+                  : Image.network(
+                _signatureUrl!,
+                fit: BoxFit.contain,
+                errorBuilder: (context, error, stackTrace) => Center(child: Text('图片加载失败', style: TextStyle(color: Colors.grey))),
+              ),
             ),
-            child: _signatureUrl == null
-                ? Center(child: Text('点击此处签名', style: TextStyle(color: Colors.grey)))
-                : Image.network(
-              _signatureUrl!,
-              fit: BoxFit.contain,
-              errorBuilder: (context, error, stackTrace) => Center(child: Text('图片加载失败', style: TextStyle(color: Colors.grey))),
-            ),
-          ),
+          )
         ),
         if (_signatureUrl != null)
           Padding(

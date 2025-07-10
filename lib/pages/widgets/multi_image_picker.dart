@@ -159,6 +159,7 @@ class _MultiImagePickerState extends State<MultiImagePicker> {
       key: ValueKey('watermark_${asset.id}'),//唯一key，前缀+资产id
       onTap: () => _previewImage(index, isWatermarked: true),
       child: Stack(
+        clipBehavior: Clip.none,
         fit: StackFit.expand,
         children: [
           Positioned.fill(
@@ -171,9 +172,9 @@ class _MultiImagePickerState extends State<MultiImagePicker> {
               },
             ),
           ),
-          Positioned(
-            top: 4,
-            right: 4,
+          Positioned(//删除按钮位置
+            top: -8,
+            right: -8,
             child: GestureDetector(
               onTap: () => _removeAsset(index),
               child: Container(
@@ -201,6 +202,7 @@ class _MultiImagePickerState extends State<MultiImagePicker> {
       key: ValueKey('original_${asset.id}'),//唯一key
       onTap: () => _previewImage(index, isWatermarked: false),
       child: Stack(
+        clipBehavior: Clip.none,
         fit: StackFit.expand,
         children: [
           Positioned.fill(
@@ -216,8 +218,8 @@ class _MultiImagePickerState extends State<MultiImagePicker> {
             ),
           ),
           Positioned(
-            top: 4,
-            right: 4,
+            top: -8,
+            right: -8,
             child: GestureDetector(
               onTap: () => _removeAsset(index),
               child: Container(
@@ -253,11 +255,8 @@ class _MultiImagePickerState extends State<MultiImagePicker> {
   Widget _buildAddImageTile() {
     return GestureDetector(
       onTap: _showImageSourceDialog,
-      child: Container(
-        decoration: BoxDecoration(
-          border: Border.all(color: Color(0xFFEE5C5C)),
-          borderRadius: BorderRadius.circular(4),
-        ),
+      child: Card(
+        elevation: 4,
         child: const Center(
           child: Icon(
             Icons.add,

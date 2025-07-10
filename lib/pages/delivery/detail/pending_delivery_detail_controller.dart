@@ -17,11 +17,6 @@ class PendingDeliveryDetailController extends GetxController {
     update();
   }
 
-  void uploadImage() {
-    // TODO: 实际图片上传逻辑，这里仅模拟
-    uploadedImage.value = '图片已上传';
-  }
-
   void addPoint(Offset point) {
     points.add(point);
   }

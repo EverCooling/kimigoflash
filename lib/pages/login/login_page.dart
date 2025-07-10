@@ -50,7 +50,7 @@ class LoginPage extends GetView<LoginController> {
                   labelText: '密码',
                   controller: controller.passwordController,
                   hintText: '请输入密码',
-                  prefixIcon: Icons.person,
+                  prefixIcon: Icons.password_outlined,
                   onSuffixPressed: () async {
 
                   },

@@ -37,6 +37,7 @@ class _DeliveryListPageState extends State<DeliveryListPage> with SingleTickerPr
 
   @override
   void dispose() {
+
     _searchController.dispose();
     super.dispose();
   }
@@ -114,12 +115,13 @@ class _DeliveryListPageState extends State<DeliveryListPage> with SingleTickerPr
         child: Row(
           children: [
             Expanded(
-              child: Container(
+              child: SizedBox(
                 height: 54,
                 child: CustomTextField(
                   name: 'kyInStorageNumber',
                   labelText: '扫描单号',
                   enabled: true,
+                  autofocus: false,
                   hintText: '请输入运单号',
                   prefixIcon: Icons.vertical_distribute,
                   suffixIcon: Icons.barcode_reader,
@@ -132,18 +134,20 @@ class _DeliveryListPageState extends State<DeliveryListPage> with SingleTickerPr
                     }
                   },
                   onTapOutside: (event) {
-                    //失去焦点
+                    // 失去焦点
                     FocusScope.of(context).unfocus();
-                    final formState = _formKey.currentState;
-                    if (formState != null) {
-                      final currentValue = formState.fields['kyInStorageNumber']?.value;
-                      if (currentValue != null && currentValue.isNotEmpty) {
-                        HUD.show(context);
-                        _fetchOrders(_getStatus(controller.tabController.index)).whenComplete(() {
-                          HUD.hide();
-                        });
-                      } else {
-                        Get.snackbar('提示', '请先输入或扫描订单号');
+
+                    // 只有当搜索文本不为空时才触发订单验证
+                    if (_searchText.isNotEmpty) {
+                      final formState = _formKey.currentState;
+                      if (formState != null) {
+                        final currentValue = formState.fields['kyInStorageNumber']?.value;
+                        if (currentValue != null && currentValue.isNotEmpty) {
+                          HUD.show(context);
+                          _fetchOrders(_getStatus(controller.tabController.index)).whenComplete(() {
+                            HUD.hide();
+                          });
+                        }
                       }
                     }
                   },
@@ -183,7 +187,7 @@ class _DeliveryListPageState extends State<DeliveryListPage> with SingleTickerPr
             SizedBox(width: 10),
             // 时间选择按钮 - 固定宽度
             ConstrainedBox(
-              constraints: BoxConstraints(minWidth: 120),
+              constraints: BoxConstraints(minWidth: 80,minHeight: 44),
               child: ElevatedButton.icon(
                 onPressed: () => _showDeliveryMethodSelector(context),
                 icon: Icon(Icons.calendar_today),
@@ -194,7 +198,7 @@ class _DeliveryListPageState extends State<DeliveryListPage> with SingleTickerPr
                 style: ElevatedButton.styleFrom(
                   foregroundColor: Colors.blue,
                   backgroundColor: Colors.white,
-                  elevation: 0,
+                  elevation: 4,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(8),
                     side: BorderSide(color: Colors.grey.shade300),
@@ -316,12 +320,23 @@ class _DeliveryListPageState extends State<DeliveryListPage> with SingleTickerPr
           item: order,
           onTap: () => controller.navigateToDetail(order, type),
           onSignTap: () async {
-            final result = await  Get.toNamed(
-              '/pending-delivery-detail',
-              arguments: order, // 直接传递item作为deliveryItem
-            );
-            if(result == true){
-              _fetchOrders(_getStatus(controller.tabController.index));
+            //如果是pending跳转pending详情，如果是failed，跳转failed详情
+            if (type == DeliveryStatus.pending) {
+              final result = await  Get.toNamed(
+                '/pending-delivery-detail',
+                arguments: order, // 直接传递item作为deliveryItem
+              );
+              if(result == true){
+                _fetchOrders(_getStatus(controller.tabController.index));
+              }
+            } else if (type == DeliveryStatus.failed) {
+              final result = await Get.toNamed(
+                '/failed-delivery-detail',
+                arguments: order, // 直接传递item作为deliveryItem
+              );
+              if(result == true){
+                _fetchOrders(_getStatus(controller.tabController.index));
+              }
             }
           },
           onFailTap: () async {

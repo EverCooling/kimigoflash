@@ -44,9 +44,4 @@ class SignReceiptScanController extends GetxController {
     points.clear();
   }
 
-  // 模拟图片上传
-  void uploadImage() {
-    // 这里调用图片选择器逻辑
-    uploadedImage.value = '图片已上传'; // 模拟上传成功
-  }
 }
