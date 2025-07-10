@@ -393,16 +393,17 @@ class _MultiImagePickerState extends State<MultiImagePicker> {
           continue;
         }
 
-        // 步骤1：先压缩图片到200k以内
-        final compressedFile = await compressImage(file);
-        print('压缩后大小: ${await _getFileSize(compressedFile)} 字节');
 
         // 步骤2：添加水印（基于压缩后的图片）
-        File? watermarkedFile = await _addTextWatermarkToImage(compressedFile);
+        File? watermarkedFile = await _addTextWatermarkToImage(file);
         _watermarkedPaths[i] = watermarkedFile.path;
 
+        // 步骤1：先压缩图片到200k以内
+        final compressedFile = await compressImage(watermarkedFile);
+        print('压缩后大小: ${await _getFileSize(compressedFile)} 字节');
+
         // 步骤3：上传压缩并带水印的图片
-        final response = await AuthApi().uploadFile(watermarkedFile);
+        final response = await AuthApi().uploadFile(compressedFile);
         if (response.data != null) {
           uploadedUrls.add(response.data!['value']);
         }

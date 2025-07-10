@@ -80,7 +80,8 @@ class _OutboundScanPageState extends State<OutboundScanPage> {
         _formKey.currentState!.reset();
       } else {
         await _deliveryManBatchOutWarehouse(orderNumber);
-
+        //清除单号
+        controller.scanController.clear();
         Get.snackbar('失败', response.msg ?? '验证失败');
         // 验证失败，从已处理集合中移除
         _processedOrders.remove(orderNumber);

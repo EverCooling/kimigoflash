@@ -85,6 +85,7 @@ class _SignReceiptScanPageState extends State<SignReceiptScanPage> {
         Get.snackbar('成功', '单号验证成功');
         _updateOrderNumber(orderNumber); // 新增：验证成功后更新单号
       } else {
+        controller.scanController.clear();
         Get.snackbar('失败', response.msg ?? '验证失败');
       }
     } catch (e) {
@@ -179,6 +180,7 @@ class _SignReceiptScanPageState extends State<SignReceiptScanPage> {
                       labelText: '扫描单号',
                       enabled: true,
                       hintText: '请输入运单号',
+                      controller: controller.scanController,
                       prefixIcon: Icons.vertical_distribute,
                       suffixIcon: Icons.barcode_reader,
                       onTapOutside: (event) {

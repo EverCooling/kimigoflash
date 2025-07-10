@@ -27,6 +27,23 @@ class AuthApi {
     }
   }
 
+  //异常登记校验接口
+  Future<ApiResponse> checkOrderAbnormalRegister(Map<String,dynamic> queryParameters) async {
+    try {
+      final response = await _client.post(
+          '/delivery-man/delivery-man-check-order-abnormal-register',
+          data: queryParameters
+      );
+
+      // 使用ApiResponse.parse方法解析响应
+      return ApiResponse.parse(response.data);
+    } catch (e) {
+      return ApiResponse.failure(
+        msg: '验证出错: ${e.toString()}',
+        code: 500,
+      );
+    }
+  }
 
   //签收校验接口
   Future<ApiResponse> CheckOrderIsDeliver(Map<String,dynamic> queryParameters) async {

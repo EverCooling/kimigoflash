@@ -1,8 +1,11 @@
 import 'dart:ui';
 
+import 'package:flutter/cupertino.dart';
 import 'package:get/get.dart';
 
 class SignReceiptScanController extends GetxController {
+  final scanController = TextEditingController();
+
   // 表单字段
   final kyInStorageNumber = ''.obs;
   final selectedMethod = Rx<String?>(null);

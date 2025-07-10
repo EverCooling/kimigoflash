@@ -118,6 +118,18 @@ class _LimitedTextFormFieldState extends State<LimitedTextFormField> {
             }
             return widget.validator?.call(value);
           },
+          onTapOutside: (event) {
+            FocusScope.of(context).unfocus();
+            _formState?.save();
+          },
+          onEditingComplete: () {
+            FocusScope.of(context).unfocus();
+            _formState?.save();
+          },
+          onSubmitted: (value) {
+            FocusScope.of(context).unfocus();
+            _formState?.save();
+          },
         ),
         // 字数提示
         Padding(
@@ -137,12 +149,5 @@ class _LimitedTextFormFieldState extends State<LimitedTextFormField> {
         ),
       ],
     );
-  }
-}
-
-// 扩展方法实现
-extension FormBuilderStateExtension on FormBuilderState {
-  Stream<FormBuilderFieldState?> fieldValueStream(String name) {
-    return fields[name]?.value ?? '';
   }
 }

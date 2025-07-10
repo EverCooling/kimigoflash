@@ -30,6 +30,14 @@ class _PendingDeliveryDetailPageState extends State<PendingDeliveryDetail> {
   String? _signatureImageUrl;
   final _formKey = GlobalKey<FormBuilderState>();
   Map<String,dynamic>? deliveryItem;
+  String? _currentOrderNumber; // 新增：当前扫描的单号
+
+  // 新增：更新当前单号并刷新界面
+  void _updateOrderNumber(String? orderNumber) {
+    setState(() {
+      _currentOrderNumber = orderNumber;
+    });
+  }
 
   @override
   void initState() {
@@ -120,6 +128,7 @@ class _PendingDeliveryDetailPageState extends State<PendingDeliveryDetail> {
       if (response.code == 200) {
         setState(() {
           deliveryDetails = DeliveryDetail.fromJson(response.data);
+          _updateOrderNumber(deliveryDetails?.kyInStorageNumber);
         });
       } else {
         Get.snackbar(
@@ -228,6 +237,7 @@ class _PendingDeliveryDetailPageState extends State<PendingDeliveryDetail> {
                     // 图片上传区域
                     SizedBox(height: 8),
                     MultiImagePicker(
+                      orderNumber: _currentOrderNumber, // 关键：传递当前单号
                       maxCount: 3,
                       onImageUploaded: (imagePaths) {
                         _receiptImageUrls = imagePaths;
