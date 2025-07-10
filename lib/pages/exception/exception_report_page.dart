@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:flutter_form_builder/flutter_form_builder.dart';
-import 'package:get/get_connect/http/src/utils/utils.dart' as formState;
-import 'package:get/get_connect/http/src/utils/utils.dart';
 import 'package:kimiflash/http/api/auth_api.dart';
 import 'package:kimiflash/pages/widgets/limit_description_box.dart';
 import 'package:kimiflash/pages/widgets/loading_manager.dart';
@@ -24,17 +22,8 @@ class _ExceptionReportPageState extends State<ExceptionReportPage> {
   List<String>? _receiptImageUrls;
   final AuthApi _authApi = AuthApi();
   String? deliveryFailType = '请选择异常原因'; // 默认值设置为提示文字
-  Map<String,dynamic>? deliveryItem;
-
+  Map<String, dynamic>? deliveryItem;
   final _formKey = GlobalKey<FormBuilderState>();
-  String? _currentOrderNumber; // 新增：当前扫描的单号
-
-  // 新增：更新当前单号并刷新界面
-  void _updateOrderNumber(String? orderNumber) {
-    setState(() {
-      _currentOrderNumber = orderNumber;
-    });
-  }
 
   @override
   void initState() {
@@ -47,13 +36,8 @@ class _ExceptionReportPageState extends State<ExceptionReportPage> {
 
       // 使用WidgetsBinding确保在Widget渲染完成后再设置值
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        // 设置控制器的值
-        controller.scanController.text = orderNumber;
-
-        // 更新表单字段的值
-        if (_formKey.currentState != null) {
-          _formKey.currentState?.fields['kyInStorageNumber']?.didChange(orderNumber);
-        }
+        // 直接通过表单设置值
+        _formKey.currentState?.fields['kyInStorageNumber']?.didChange(orderNumber);
       });
     }
   }
@@ -71,11 +55,11 @@ class _ExceptionReportPageState extends State<ExceptionReportPage> {
     }
   }
 
-
-  Future<void> _verifyOrder(String orderNumber) async {
+  // 验证订单号
+  _verifyOrder(String orderNumber) async {
     // 表单验证
-    if (!_formKey.currentState!.validate()) {
-      return;
+    if (orderNumber.isEmpty) {
+      return false;
     }
 
     HUD.show(context);
@@ -86,8 +70,8 @@ class _ExceptionReportPageState extends State<ExceptionReportPage> {
       if (response.code == 200) {
         Get.snackbar('成功', '单号验证成功');
       } else {
-        //清除输入框
-        controller.scanController.clear();
+        // 清除输入框
+        // _formKey.currentState?.fields['kyInStorageNumber']?.didChange('');
         Get.snackbar('失败', response.msg ?? '验证失败');
       }
     } catch (e) {
@@ -107,9 +91,9 @@ class _ExceptionReportPageState extends State<ExceptionReportPage> {
     final formData = _formKey.currentState!.value;
     print("表单数据: $formData");
 
-    if (deliveryFailType == '请选择异常原因') {
-      // 如果仍为默认值，从表单获取实际选择的值
-      deliveryFailType = formData['deliveryFailType'];
+    if (_receiptImageUrls == null || _receiptImageUrls!.isEmpty) {
+      Get.snackbar('错误', '请至少上传一张凭证图片');
+      return;
     }
 
     HUD.show(context);
@@ -126,8 +110,8 @@ class _ExceptionReportPageState extends State<ExceptionReportPage> {
         Get.snackbar('成功', '异常登记提交成功');
         Get.back(result: true); // 只在成功时返回
       } else {
-        //清除单号
-        controller.scanController.clear();
+        // 清除单号
+        _formKey.currentState?.fields['kyInStorageNumber']?.didChange('');
         Get.snackbar('失败', response.msg ?? '未知错误');
       }
     } catch (e) {
@@ -154,25 +138,18 @@ class _ExceptionReportPageState extends State<ExceptionReportPage> {
                 enabled: true,
                 labelText: '扫描单号',
                 hintText: '请输入运单号',
-                controller: controller.scanController,
                 prefixIcon: Icons.vertical_distribute,
                 suffixIcon: Icons.barcode_reader,
-                onTapOutside: (event) {
-                  //失去焦点
+                onTapOutside: (event) async {
+                  // 失去焦点
                   FocusScope.of(context).unfocus();
                   final formState = _formKey.currentState;
                   if (formState != null) {
-                    // 1. 获取当前输入的订单号
-                    final currentValue = formState.fields['kyInStorageNumber']?.value;
+                    // 获取当前输入的订单号
+                    final currentValue = formState.fields['kyInStorageNumber']?.value as String?;
                     if (currentValue != null && currentValue.isNotEmpty) {
-                      _updateOrderNumber(currentValue);
-                      // 2. 显示加载状态
-                      HUD.show(context);
-                      // 3. 调用校验接口
-                      _verifyOrder(currentValue).whenComplete(() {
-                        // 4. 隐藏加载状态
-                        HUD.hide();
-                      });
+                      // 调用校验接口
+                      await _verifyOrder(currentValue);
                     } else {
                       // 订单号为空时的处理
                       Get.snackbar('提示', '请先输入或扫描订单号');
@@ -185,13 +162,12 @@ class _ExceptionReportPageState extends State<ExceptionReportPage> {
                   final barcodeResult = await Get.toNamed('/scanner');
                   if (barcodeResult != null) {
                     _formKey.currentState?.fields['kyInStorageNumber']?.didChange(barcodeResult);
-                    _updateOrderNumber(barcodeResult);
                     await _verifyOrder(barcodeResult);
                   }
                 },
                 onSubmitted: (value) async {
-                  if (value != null) {
-                    _updateOrderNumber(value);
+                  FocusScope.of(context).unfocus();
+                  if (value != null && value.isNotEmpty) {
                     await _verifyOrder(value);
                   }
                 },
@@ -272,7 +248,7 @@ class _ExceptionReportPageState extends State<ExceptionReportPage> {
 
               // 图片上传
               MultiImagePicker(
-                orderNumber: _currentOrderNumber, // 关键：传递当前单号
+                orderNumber: _formKey.currentState?.fields['kyInStorageNumber']?.value as String?,
                 maxCount: 3,
                 onImageUploaded: (imagePaths) {
                   _receiptImageUrls = imagePaths;
