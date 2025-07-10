@@ -251,10 +251,17 @@ class _ExceptionReportPageState extends State<ExceptionReportPage> {
 
               // 调用封装的异常描述组件
               LimitedTextFormField(
-                name: 'description',
+                name: 'failTitle', // 字段名必须唯一且正确
                 labelText: '异常描述',
                 hintText: '请输入详细异常情况（最多200字）',
                 maxLength: 200,
+                // 可自定义验证器（可选）
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return '请输入异常描述'; // 自定义提示
+                  }
+                  return null;
+                },
               ),
 
               SizedBox(height: 20),

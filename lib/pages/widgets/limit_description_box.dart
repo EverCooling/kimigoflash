@@ -1,11 +1,9 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_form_builder/flutter_form_builder.dart';
 
 class LimitedTextFormField extends StatefulWidget {
-  final String name;
+  final String name; // 表单字段名（必须与FormBuilder绑定）
   final String? initialValue;
   final FormFieldValidator<String>? validator;
   final int maxLength;
@@ -27,70 +25,34 @@ class LimitedTextFormField extends StatefulWidget {
 }
 
 class _LimitedTextFormFieldState extends State<LimitedTextFormField> {
-  late StreamSubscription<FormBuilderFieldState?>? _subscription;
-  FormBuilderState? _formState;
-
-  @override
-  void initState() {
-    super.initState();
-    // 使用WidgetsBinding确保在组件完全初始化后再进行订阅
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _formState = FormBuilder.of(context);
-      _initSubscription();
-    });
-  }
-
-  void _initSubscription() {
-    final formState = FormBuilder.of(context);
-    if (formState == null) return;
-    final field = formState.fields[widget.name];
-    if (field is FormBuilderFieldState) {
-      // _subscription = formState.valueStream.listen((_) {});
-    }
-  }
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    // 依赖变化时更新FormBuilderState引用
-    _formState = FormBuilder.of(context);
-  }
-
-  @override
-  void dispose() {
-    _subscription?.cancel();
-    _subscription = null;
-    super.dispose();
-  }
-
   @override
   Widget build(BuildContext context) {
-    if (_formState == null) {
-      // 表单状态未初始化时显示加载状态或空组件
-      return const SizedBox();
+    // 实时获取最新的表单状态（关键修复）
+    final formState = FormBuilder.of(context);
+    if (formState == null) {
+      return const SizedBox(); // 确保父级有FormBuilder
     }
 
-    final fieldState = _formState!.fields[widget.name];
-    final value = fieldState?.value?.toString() ?? '';
-    final length = value.length;
+    // 实时获取当前字段的值（从最新的formState中获取）
+    final fieldValue = formState.fields[widget.name]?.value?.toString() ?? '';
+    final length = fieldValue.length;
     final isMaxLengthReached = length >= widget.maxLength;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         FormBuilderTextField(
-          name: widget.name,
+          name: widget.name, // 字段名必须与父级FormBuilder中的定义一致
           initialValue: widget.initialValue,
           decoration: InputDecoration(
             labelText: widget.labelText,
             hintText: widget.hintText,
-            // 红色边框设置
             border: OutlineInputBorder(
-              borderSide: BorderSide(color: Colors.red),
+              borderSide: const BorderSide(color: Colors.red),
               borderRadius: BorderRadius.circular(8),
             ),
             enabledBorder: OutlineInputBorder(
-              borderSide: BorderSide(color: Colors.red),
+              borderSide: const BorderSide(color: Colors.red),
               borderRadius: BorderRadius.circular(8),
             ),
             focusedBorder: OutlineInputBorder(
@@ -98,53 +60,46 @@ class _LimitedTextFormFieldState extends State<LimitedTextFormField> {
               borderRadius: BorderRadius.circular(8),
             ),
             errorBorder: OutlineInputBorder(
-              borderSide: BorderSide(color: Colors.red),
+              borderSide: const BorderSide(color: Colors.red),
               borderRadius: BorderRadius.circular(8),
             ),
             focusedErrorBorder: OutlineInputBorder(
               borderSide: BorderSide(color: Colors.red.shade700, width: 2),
               borderRadius: BorderRadius.circular(8),
             ),
+            errorText: fieldValue.isEmpty ? null : formState.fields[widget.name]?.errorText,
           ),
           maxLines: 3,
           maxLength: widget.maxLength,
           maxLengthEnforcement: MaxLengthEnforcement.enforced,
-          validator: (value) {
+          // 验证逻辑：优先使用外部传入的validator，否则使用默认
+          validator: widget.validator ?? (value) {
             if (value == null || value.isEmpty) {
-              return '请输入$widget.labelText';
+              return '请输入${widget.labelText}';
             }
             if (value.length > widget.maxLength) {
               return '不能超过${widget.maxLength}字';
             }
-            return widget.validator?.call(value);
+            return null;
           },
-          onTapOutside: (event) {
-            FocusScope.of(context).unfocus();
-            _formState?.save();
+          // 修正：添加onChanged回调，确保输入时更新表单状态
+          onChanged: (value) {
+            // 不需要手动调用didChange或validate，FormBuilder会自动处理
           },
-          onEditingComplete: () {
-            FocusScope.of(context).unfocus();
-            _formState?.save();
-          },
-          onSubmitted: (value) {
-            FocusScope.of(context).unfocus();
-            _formState?.save();
-          },
+          onTapOutside: (event) => FocusScope.of(context).unfocus(),
         ),
-        // 字数提示
+        // 字数提示（基于实时值）
         Padding(
           padding: const EdgeInsets.only(top: 4),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.end,
-            children: [
-              Text(
-                '$length/${widget.maxLength}',
-                style: TextStyle(
-                  color: isMaxLengthReached ? Colors.red : Colors.grey,
-                  fontSize: 12,
-                ),
+          child: Align(
+            alignment: Alignment.centerRight,
+            child: Text(
+              '$length/${widget.maxLength}',
+              style: TextStyle(
+                color: isMaxLengthReached ? Colors.red : Colors.grey,
+                fontSize: 12,
               ),
-            ],
+            ),
           ),
         ),
       ],
