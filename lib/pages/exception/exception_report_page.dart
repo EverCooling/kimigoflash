@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:flutter_form_builder/flutter_form_builder.dart';
+import 'package:get/get_connect/http/src/utils/utils.dart' as formState;
+import 'package:get/get_connect/http/src/utils/utils.dart';
 import 'package:kimiflash/http/api/auth_api.dart';
 import 'package:kimiflash/pages/widgets/limit_description_box.dart';
 import 'package:kimiflash/pages/widgets/loading_manager.dart';
@@ -84,6 +86,8 @@ class _ExceptionReportPageState extends State<ExceptionReportPage> {
       if (response.code == 200) {
         Get.snackbar('成功', '单号验证成功');
       } else {
+        //清除输入框
+        controller.scanController.clear();
         Get.snackbar('失败', response.msg ?? '验证失败');
       }
     } catch (e) {

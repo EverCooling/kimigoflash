@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_form_builder/flutter_form_builder.dart';
+import 'package:get/get_connect/http/src/utils/utils.dart';
 
 class LimitedTextFormField extends StatefulWidget {
   final String name; // 表单字段名（必须与FormBuilder绑定）
@@ -25,6 +26,7 @@ class LimitedTextFormField extends StatefulWidget {
 }
 
 class _LimitedTextFormFieldState extends State<LimitedTextFormField> {
+
   @override
   Widget build(BuildContext context) {
     // 实时获取最新的表单状态（关键修复）
@@ -67,7 +69,6 @@ class _LimitedTextFormFieldState extends State<LimitedTextFormField> {
               borderSide: BorderSide(color: Colors.red.shade700, width: 2),
               borderRadius: BorderRadius.circular(8),
             ),
-            errorText: fieldValue.isEmpty ? null : formState.fields[widget.name]?.errorText,
           ),
           maxLines: 3,
           maxLength: widget.maxLength,
@@ -82,9 +83,12 @@ class _LimitedTextFormFieldState extends State<LimitedTextFormField> {
             }
             return null;
           },
-          // 修正：添加onChanged回调，确保输入时更新表单状态
           onChanged: (value) {
-            // 不需要手动调用didChange或validate，FormBuilder会自动处理
+            Future.delayed(Duration.zero, () {
+              if (mounted) {
+                formState.validate(); // 验证全表单（包含当前字段）
+              }
+            });
           },
           onTapOutside: (event) => FocusScope.of(context).unfocus(),
         ),
