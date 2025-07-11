@@ -3,6 +3,7 @@ import 'package:flutter_form_builder/flutter_form_builder.dart';
 import 'package:get/get.dart';
 import 'package:kimiflash/pages/widgets/loading_manager.dart';
 import '../../http/api/auth_api.dart';
+import '../../theme/app_colors.dart';
 import '../widgets/custom_text_field.dart';
 import 'outbound_scan_controller.dart'; // 引入控制器
 
@@ -244,7 +245,6 @@ class _OutboundScanPageState extends State<OutboundScanPage> {
               ),
             ),
           ),
-
           // 底部按钮区域
           Obx(() => Padding(
             padding: EdgeInsets.all(16.0),
@@ -253,13 +253,14 @@ class _OutboundScanPageState extends State<OutboundScanPage> {
                   ? null
                   : _batchUpload,
               style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.redGradient[400],
                 minimumSize: Size(double.infinity, 50),
               ),
               child: _isProcessing.value
                   ? Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  CircularProgressIndicator(color: Colors.white),
+                  CircularProgressIndicator(color: AppColors.redGradient[400]),
                   SizedBox(width: 10),
                   Text('处理中...'),
                 ],
@@ -267,6 +268,7 @@ class _OutboundScanPageState extends State<OutboundScanPage> {
                   : Text('批量上传'),
             ),
           )),
+          SizedBox(height: 30),
         ],
       ),
     );

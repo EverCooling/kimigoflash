@@ -40,33 +40,36 @@ class _LimitedTextFormFieldState extends State<LimitedTextFormField> {
     final length = fieldValue.length;
     final isMaxLengthReached = length >= widget.maxLength;
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        FormBuilderTextField(
+    return Card(
+      color: Colors.white,
+      elevation:4,
+      child: FormBuilderTextField(
           name: widget.name, // 字段名必须与父级FormBuilder中的定义一致
           initialValue: widget.initialValue,
+          enabled: true,
           decoration: InputDecoration(
             labelText: widget.labelText,
+            labelStyle: const TextStyle(color: Colors.black),
             hintText: widget.hintText,
+            errorStyle: const TextStyle(color: Colors.red),
             border: OutlineInputBorder(
-              borderSide: const BorderSide(color: Colors.red),
+              borderSide: const BorderSide(color: Colors.white10),
               borderRadius: BorderRadius.circular(8),
             ),
             enabledBorder: OutlineInputBorder(
-              borderSide: const BorderSide(color: Colors.red),
+              borderSide: const BorderSide(color: Colors.white10),
               borderRadius: BorderRadius.circular(8),
             ),
             focusedBorder: OutlineInputBorder(
-              borderSide: BorderSide(color: Colors.red.shade700, width: 2),
+              borderSide: BorderSide(color: Colors.white10),
               borderRadius: BorderRadius.circular(8),
             ),
             errorBorder: OutlineInputBorder(
-              borderSide: const BorderSide(color: Colors.red),
+              borderSide: const BorderSide(color: Colors.white10),
               borderRadius: BorderRadius.circular(8),
             ),
             focusedErrorBorder: OutlineInputBorder(
-              borderSide: BorderSide(color: Colors.red.shade700, width: 2),
+              borderSide: BorderSide(color: Colors.white10),
               borderRadius: BorderRadius.circular(8),
             ),
           ),
@@ -92,21 +95,22 @@ class _LimitedTextFormFieldState extends State<LimitedTextFormField> {
           },
           onTapOutside: (event) => FocusScope.of(context).unfocus(),
         ),
+
         // 字数提示（基于实时值）
-        Padding(
-          padding: const EdgeInsets.only(top: 4),
-          child: Align(
-            alignment: Alignment.centerRight,
-            child: Text(
-              '$length/${widget.maxLength}',
-              style: TextStyle(
-                color: isMaxLengthReached ? Colors.red : Colors.grey,
-                fontSize: 12,
-              ),
-            ),
-          ),
-        ),
-      ],
+        // Padding(
+        //   padding: const EdgeInsets.only(top: 4),
+        //   child: Align(
+        //     alignment: Alignment.centerRight,
+        //     child: Text(
+        //       '$length/${widget.maxLength}',
+        //       style: TextStyle(
+        //         color: isMaxLengthReached ? Colors.red : Colors.grey,
+        //         fontSize: 12,
+        //       ),
+        //     ),
+        //   ),
+        // ),
+
     );
   }
 }

@@ -8,6 +8,7 @@ import '../../../http/api/auth_api.dart';
 import '../../widgets/custom_dropdown_field.dart';
 import '../../widgets/loading_manager.dart';
 import '../../widgets/multi_image_picker.dart';
+import '../../widgets/multi_preview_image.dart';
 import '../../widgets/sign_method_bottom_sheet.dart';
 import '../../widgets/signature_preview.dart';
 import 'failed_delivery_detail_controller.dart';
@@ -81,8 +82,6 @@ class _FailedDeliveryDetailPageState extends State<FailedDeliveryDetail> {
   }
 
   Future<void> _submit() async {
-    Get.back(result: true);
-
     print('提交按钮点击'); // 调试输出
     HUD.show(context);
 
@@ -133,7 +132,7 @@ class _FailedDeliveryDetailPageState extends State<FailedDeliveryDetail> {
       } else {
         Get.snackbar(
           '加载失败',
-          snackPosition: SnackPosition.BOTTOM,
+          snackPosition: SnackPosition.TOP,
           response.msg,
         );
       }
@@ -141,7 +140,7 @@ class _FailedDeliveryDetailPageState extends State<FailedDeliveryDetail> {
       Get.snackbar(
         '网络错误',
         e.toString(),
-        snackPosition: SnackPosition.BOTTOM,
+        snackPosition: SnackPosition.TOP,
       );
     } finally {
       HUD.hide();
@@ -246,9 +245,12 @@ class _FailedDeliveryDetailPageState extends State<FailedDeliveryDetail> {
                     ),
                     const SizedBox(height: 16),
 
+                    _buildImageGrid(
+                        deliveryDetails?.lastDeliveryFailUrls ?? []),
+                    SizedBox(height: 16),
+
                     // 7. 签收图片
                     // 图片上传区域
-                    SizedBox(height: 8),
                     MultiImagePicker(
                       orderNumber: _currentOrderNumber, // 关键：传递当前单号
                       maxCount: 3,
@@ -309,6 +311,59 @@ class _FailedDeliveryDetailPageState extends State<FailedDeliveryDetail> {
       ),
     );
   }
+
+  Widget _buildImageGrid(List<String> imageList) {
+    if (imageList.isEmpty) {
+      return const Text('暂无图片');
+    }
+
+    return GridView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 3,
+        mainAxisSpacing: 8,
+        crossAxisSpacing: 8,
+      ),
+      itemCount: imageList.length,
+      itemBuilder: (context, index) {
+        final String imageUrl = imageList[index];
+        return _buildImageItem(imageUrl, index, imageList);
+      },
+    );
+  }
+
+  // 构建可点击的图片项
+  Widget _buildImageItem(String imageUrl, int index, List<String> imageList) {
+    return GestureDetector(
+      onTap: () => showMultipleImagePreview(context, imageList, initialIndex: index, title: '签收图片'),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(8),
+        child: Image.network(
+          imageUrl,
+          fit: BoxFit.cover,
+          loadingBuilder: (context, child, loadingProgress) {
+            if (loadingProgress == null) return child;
+            return Center(
+              child: CircularProgressIndicator(
+                value: loadingProgress.expectedTotalBytes != null
+                    ? loadingProgress.cumulativeBytesLoaded / loadingProgress.expectedTotalBytes!
+                    : null,
+              ),
+            );
+          },
+          errorBuilder: (context, error, stackTrace) {
+            return Icon(
+              Icons.error,
+              color: Colors.red,
+              size: 40,
+            );
+          },
+        ),
+      ),
+    );
+  }
+
 
   // 限制文本长度，超过200字时显示前200字并添加"..."
   String _getLimitedText(String text) {

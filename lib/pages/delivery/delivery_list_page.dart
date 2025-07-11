@@ -29,6 +29,13 @@ class _DeliveryListPageState extends State<DeliveryListPage> with SingleTickerPr
   void initState() {
     super.initState();
     controller.tabController.addListener(_handleChange);
+    // 注册路由监听
+    Get.routing.addListener((routing) {
+      if (routing.current == "/B" && routing.previous == "/A") {
+        print("路由监听：A页面返回B页面");
+        // 处理B页面逻辑
+      }
+    });
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _fetchOrders(_getStatus(controller.tabController.index));
     });
@@ -40,6 +47,15 @@ class _DeliveryListPageState extends State<DeliveryListPage> with SingleTickerPr
 
     _searchController.dispose();
     super.dispose();
+  }
+
+  // 路由变化回调
+  void _onRouteChanged(Routing routing) {
+    // 监听路由栈变化：当A页面被弹出（返回B）时触发
+    if (routing.current == "/B" && routing.previous == "/A") {
+      print("路由监听：A页面返回B页面");
+      // 处理B页面逻辑
+    }
   }
 
   _handleChange() {

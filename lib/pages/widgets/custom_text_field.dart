@@ -38,6 +38,7 @@ class CustomTextField extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Card(
+      color: Colors.white,
       elevation: 4,
       child: FormBuilderTextField(
         name: name,
@@ -51,7 +52,16 @@ class CustomTextField extends StatelessWidget {
           hintText: hintText,
           filled: true,
           fillColor: Colors.white,
+          errorStyle: const TextStyle(color: Colors.red),
+          focusedErrorBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(8.0),
+            borderSide: BorderSide(color: Colors.white10, width: 1.0),
+          ),
           border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(8.0),
+            borderSide: BorderSide(color: Colors.white10, width: 1.0),
+          ),
+          errorBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(8.0),
             borderSide: BorderSide(color: Colors.white10, width: 1.0),
           ),
@@ -65,7 +75,7 @@ class CustomTextField extends StatelessWidget {
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(8.0),
-            borderSide: BorderSide(color: Colors.white10, width: 2.0),
+            borderSide: BorderSide(color: Colors.white10, width: 1.0),
           ),
           prefixIcon: prefixIcon != null ? Icon(prefixIcon, color: Colors.red) : null,
           suffixIcon: suffixIcon != null

@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 import 'package:get/get_core/src/get_main.dart';
 import 'package:get/get_state_manager/src/rx_flutter/rx_obx_widget.dart';
 import 'package:get/get_state_manager/src/simple/get_view.dart';
+import 'package:kimiflash/theme/app_colors.dart';
 
 import '../widgets/custom_text_field.dart';
 import 'login_controller.dart';
@@ -60,13 +61,13 @@ class LoginPage extends GetView<LoginController> {
                 SizedBox(height: 30),
                 Obx(() => ElevatedButton(
                   style: ElevatedButton.styleFrom(
-                    // backgroundColor: Colors.redAccent,
+                    backgroundColor: AppColors.redGradient[400],
                     minimumSize: Size(double.infinity, 50),
                   ),
                   onPressed: controller.isLoading.value ? null : controller.login,
                   child: controller.isLoading.value
                       ? CircularProgressIndicator(color: Colors.white)
-                      : Text('登录', style: TextStyle(fontSize: 18,color: Colors.redAccent)),
+                      : Text('登录', style: TextStyle(fontSize: 18,color: Colors.white)),
                 )),
               ],
             ),

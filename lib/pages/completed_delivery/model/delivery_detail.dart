@@ -12,6 +12,7 @@ class DeliveryDetail {
   final String kyInStorageNumber;
   final dynamic signForType; // 原数据为 null
   final String signForImg; // 注意：这是一个 JSON 字符串，而非数组
+  final String lastDeliveryFailUrl;//注意：这是一个 JSON字符串，而非数组
   final dynamic signature; // 原数据为 null
   final List<OrderItem> deliveryCustomerOrderDetailViewList;
   final int pcsCount;
@@ -27,6 +28,7 @@ class DeliveryDetail {
     required this.kyInStorageNumber,
     required this.signForType,
     required this.signForImg,
+    required this.lastDeliveryFailUrl,
     required this.signature,
     required this.deliveryCustomerOrderDetailViewList,
     required this.pcsCount,
@@ -44,6 +46,7 @@ class DeliveryDetail {
       kyInStorageNumber: json['kyInStorageNumber'] ?? '',
       signForType: json['signForType'],
       signForImg: json['signForImg'] ?? '',
+      lastDeliveryFailUrl: json['lastDeliveryFailUrl'] ?? '',
       signature: json['signature'],
       deliveryCustomerOrderDetailViewList: (json['deliveryCustomerOrderDetailViewList'] as List?)
           ?.map<OrderItem>((item) => OrderItem.fromJson(item))
@@ -63,7 +66,19 @@ class DeliveryDetail {
       return [];
     }
   }
+
+  List<String> get lastDeliveryFailUrls {
+    try {
+      if (lastDeliveryFailUrl.isEmpty) return [];
+      return List<String>.from(json.decode(lastDeliveryFailUrl));
+    } catch (e) {
+      print('解析签名图片 URL 失败: $e');
+      return [];
+    }
+  }
 }
+
+
 
 class OrderItem {
   final String brandEnglishName;

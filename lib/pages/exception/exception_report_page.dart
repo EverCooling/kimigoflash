@@ -8,6 +8,7 @@ import 'package:kimiflash/pages/widgets/custom_dropdown_field.dart';
 import 'package:kimiflash/pages/widgets/multi_image_picker.dart';
 import 'package:kimiflash/pages/widgets/sign_method_bottom_sheet.dart';
 import 'package:kimiflash/pages/exception/exception_report_controller.dart';
+import '../../theme/app_colors.dart';
 import '../widgets/custom_text_field.dart';
 
 class ExceptionReportPage extends StatefulWidget {
@@ -184,49 +185,52 @@ class _ExceptionReportPageState extends State<ExceptionReportPage> {
               ),
               SizedBox(height: 20),
               // 异常原因选择
-              FormBuilderField(
-                name: 'deliveryFailType',
-                initialValue: '请选择异常原因', // 设置表单初始值
-                validator: (value) {
-                  if (value == null || value.toString() == '请选择异常原因') {
-                    return '请选择异常原因';
-                  }
-                  return null;
-                },
-                builder: (field) {
-                  return CustomDropdownField(
-                    name: 'deliveryFailType',
-                    labelText: '请选择异常原因',
-                    items: ['请选择异常原因'] + controller.reasons, // 选项列表添加默认提示
-                    initialValue: field.value.toString(),
-                    onTap: (context) async {
-                      // 过滤掉默认提示项再显示选项
-                      final filteredReasons = controller.reasons.where((reason) => reason != '请选择异常原因').toList();
-                      final result = await SignMethodBottomSheet.show(
-                        context,
-                        methods: filteredReasons,
-                        initialValue: field.value.toString() == '请选择异常原因' ? null : field.value.toString(),
-                        title: '选择异常原因',
-                        titleStyle: TextStyle(fontSize: 20, color: Colors.blue),
-                        selectedColor: Colors.blue,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-                        ),
-                      );
-                      if (result != null) {
-                        setState(() {
-                          deliveryFailType = result['value'];
-                          field.didChange(result['value']);
-                        });
-                        return result['value'];
-                      }
-                      return field.value.toString();
-                    },
-                    validator: (value) {
-                      return value == null || value == '请选择异常原因' ? '请选择异常原因' : null;
-                    },
-                  );
-                },
+              Card(
+                elevation: 4,
+                child:FormBuilderField(
+                  name: 'deliveryFailType',
+                  initialValue: '请选择异常原因', // 设置表单初始值
+                  validator: (value) {
+                    if (value == null || value.toString() == '请选择异常原因') {
+                      return '请选择异常原因';
+                    }
+                    return null;
+                  },
+                  builder: (field) {
+                    return CustomDropdownField(
+                      name: 'deliveryFailType',
+                      labelText: '请选择异常原因',
+                      items: ['请选择异常原因'] + controller.reasons, // 选项列表添加默认提示
+                      initialValue: field.value.toString(),
+                      onTap: (context) async {
+                        // 过滤掉默认提示项再显示选项
+                        final filteredReasons = controller.reasons.where((reason) => reason != '请选择异常原因').toList();
+                        final result = await SignMethodBottomSheet.show(
+                          context,
+                          methods: filteredReasons,
+                          initialValue: field.value.toString() == '请选择异常原因' ? null : field.value.toString(),
+                          title: '选择异常原因',
+                          titleStyle: TextStyle(fontSize: 20, color: Colors.blue),
+                          selectedColor: Colors.blue,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+                          ),
+                        );
+                        if (result != null) {
+                          setState(() {
+                            deliveryFailType = result['value'];
+                            field.didChange(result['value']);
+                          });
+                          return result['value'];
+                        }
+                        return field.value.toString();
+                      },
+                      validator: (value) {
+                        return value == null || value == '请选择异常原因' ? '请选择异常原因' : null;
+                      },
+                    );
+                  },
+                )
               ),
               SizedBox(height: 20),
 
@@ -260,9 +264,12 @@ class _ExceptionReportPageState extends State<ExceptionReportPage> {
 
               // 提交按钮
               ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.redGradient[400],
+                  minimumSize: Size(double.infinity, 50),
+                ),
                 onPressed: _submit,
-                style: ElevatedButton.styleFrom(minimumSize: Size(double.infinity, 50)),
-                child: Text('提交'),
+                child: Text('提交',style: TextStyle(fontSize: 16, color: Colors.white),),
               ),
             ],
           ),

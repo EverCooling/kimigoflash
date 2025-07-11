@@ -9,6 +9,7 @@ import '../../../http/api/auth_api.dart';
 import '../../widgets/custom_dropdown_field.dart';
 import '../../widgets/loading_manager.dart';
 import '../../widgets/multi_image_picker.dart';
+import '../../widgets/multi_preview_image.dart';
 import '../../widgets/sign_method_bottom_sheet.dart';
 import '../../widgets/signature_preview.dart';
 
@@ -234,11 +235,9 @@ class _PendingDeliveryDetailPageState extends State<PendingDeliveryDetail> {
                      return value == null ? '请选择签收方式' : null;
                    })),
 
-                    const SizedBox(height: 16),
-
+                    SizedBox(height: 16),
                     // 7. 签收图片
                     // 图片上传区域
-                    SizedBox(height: 8),
                     MultiImagePicker(
                       orderNumber: _currentOrderNumber, // 关键：传递当前单号
                       maxCount: 3,
@@ -299,6 +298,7 @@ class _PendingDeliveryDetailPageState extends State<PendingDeliveryDetail> {
       ),
     );
   }
+
 
   // 构建信息卡片
   Widget _buildInfoCard({

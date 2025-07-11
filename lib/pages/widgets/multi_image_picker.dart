@@ -256,6 +256,7 @@ class _MultiImagePickerState extends State<MultiImagePicker> {
     return GestureDetector(
       onTap: _showImageSourceDialog,
       child: Card(
+        color: Colors.white,
         elevation: 4,
         child: const Center(
           child: Icon(

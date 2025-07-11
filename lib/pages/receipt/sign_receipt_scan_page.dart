@@ -7,6 +7,7 @@ import 'package:kimiflash/pages/receipt/sign_receipt_scan_controller.dart';
 import 'package:kimiflash/pages/widgets/loading_manager.dart';
 import 'package:kimiflash/pages/widgets/signature_preview.dart';
 import '../../http/api/auth_api.dart';
+import '../../theme/app_colors.dart';
 import '../widgets/custom_dropdown_field.dart';
 import '../widgets/custom_text_field.dart';
 import '../widgets/multi_image_picker.dart';
@@ -202,7 +203,7 @@ class _SignReceiptScanPageState extends State<SignReceiptScanPage> {
                             });
                           } else {
                             // 订单号为空时的处理
-                            Get.snackbar('提示', '请先输入或扫描订单号');
+                            // Get.snackbar('提示', '请先输入或扫描订单号');
                           }
                         }
                       },
@@ -232,42 +233,45 @@ class _SignReceiptScanPageState extends State<SignReceiptScanPage> {
                     ),
                     SizedBox(height: 20),
 
-                    CustomDropdownField(
-                      name: 'signMethod',
-                      labelText: '签收方式',
-                      items: controller.methods,
-                      initialValue: null,
-                      onTap: (context) async {
-                        final result = await SignMethodBottomSheet.show(
-                          context,
-                          methods: controller.methods,
-                          initialValue: null,
-                          title: '选择签收方式',
-                          titleStyle: TextStyle(fontSize: 20, color: Colors.blue),
-                          selectedColor: Colors.blue,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-                          ),
-                          additionalActions: [
-                            // Divider(),
-                            // ListTile(
-                            //   title: Text('取消', style: TextStyle(color: Colors.grey)),
-                            //   onTap: () => Navigator.pop(context),
-                            // ),
-                          ],
-                        );
-                        if (result != null) {
-                          print('选择的签收方式: ${result['value']}');
-                          return result['value'];
-                        }
-                        return null;
-                      },
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return '请选择签收方式';
-                        }
-                        return null;
-                      },
+                    Card(
+                      elevation: 4,
+                      child: CustomDropdownField(
+                        name: 'signMethod',
+                        labelText: '签收方式',
+                        items: controller.methods,
+                        initialValue: null,
+                        onTap: (context) async {
+                          final result = await SignMethodBottomSheet.show(
+                            context,
+                            methods: controller.methods,
+                            initialValue: null,
+                            title: '选择签收方式',
+                            titleStyle: TextStyle(fontSize: 20, color: Colors.blue),
+                            selectedColor: Colors.blue,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+                            ),
+                            additionalActions: [
+                              // Divider(),
+                              // ListTile(
+                              //   title: Text('取消', style: TextStyle(color: Colors.grey)),
+                              //   onTap: () => Navigator.pop(context),
+                              // ),
+                            ],
+                          );
+                          if (result != null) {
+                            print('选择的签收方式: ${result['value']}');
+                            return result['value'];
+                          }
+                          return null;
+                        },
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return '请选择签收方式';
+                          }
+                          return null;
+                        },
+                      ),
                     ),
                     // 签收方式
                     SizedBox(height: 20),
@@ -309,11 +313,13 @@ class _SignReceiptScanPageState extends State<SignReceiptScanPage> {
             child: ElevatedButton(
               onPressed: _submit,
               style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.redGradient[400],
                 minimumSize: Size(double.infinity, 50),
               ),
-              child: Text('提交'),
+              child: Text('提交',style: TextStyle(fontSize: 18, color: Colors.white),),
             ),
           ),
+          SizedBox(height: 30),
         ],
       ),
     );
